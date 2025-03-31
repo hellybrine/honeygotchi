@@ -1,2 +1,2 @@
 # honeygotchi
-A Reinforment Learning based honeypot taking taking after the pwnagotchi
+A Reinforment Learning based honeypot taking after the pwnagotchi
