@@ -1,0 +1,207 @@
+%-------------------------
+% Resume in Latex
+% Author : Aarav Machhral (Modified)
+% Based off of: https://github.com/sb2nov/resume
+% License : MIT
+%------------------------
+
+\documentclass[letterpaper,11pt]{article}
+
+\usepackage{latexsym}
+\usepackage[empty]{fullpage}
+\usepackage{titlesec}
+\usepackage{marvosym}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{verbatim}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+\usepackage[english]{babel}
+\usepackage{tabularx}
+\usepackage{fontawesome5}
+\usepackage{multicol}
+\setlength{\multicolsep}{-3.0pt}
+\setlength{\columnsep}{-1pt}
+\input{glyphtounicode}
+
+
+%----------FONT OPTIONS----------
+% sans-serif
+% \usepackage[sfdefault]{FiraSans}
+% \usepackage[sfdefault]{roboto}
+% \usepackage[sfdefault]{noto-sans}
+% \usepackage[default]{sourcesanspro}
+
+% serif
+% \usepackage{CormorantGaramond}
+% \usepackage{charter}
+
+
+\pagestyle{fancy}
+\fancyhf{} % clear all header and footer fields
+\fancyfoot{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% Adjust margins
+\addtolength{\oddsidemargin}{-0.6in}
+\addtolength{\evensidemargin}{-0.5in}
+\addtolength{\textwidth}{1.19in}
+\addtolength{\topmargin}{-.7in}
+\addtolength{\textheight}{1.4in}
+
+\urlstyle{same}
+
+\raggedbottom
+\raggedright
+\setlength{\tabcolsep}{0in}
+
+% Sections formatting
+\titleformat{\section}{
+  \vspace{-4pt}\scshape\raggedright\large\bfseries
+}{}{0em}{}[\color{black}\titlerule \vspace{-5pt}]
+
+% Ensure that generate pdf is machine readable/ATS parsable
+\pdfgentounicode=1
+
+%-------------------------
+% Custom commands
+\newcommand{\resumeItem}[1]{
+  \item\small{
+    {#1 \vspace{-1pt}}
+  }
+}
+
+\newcommand{\classesList}[4]{
+    \item\small{
+        {#1 #2 #3 #4 \vspace{-2pt}}
+  }
+}
+
+\newcommand{\resumeSubheading}[4]{
+  \vspace{-2pt}\item
+    \begin{tabular*}{1.0\textwidth}[t]{l@{\extracolsep{\fill}}r}
+      \textbf{#1} & \textbf{\small #2} \\
+      \textit{\small#3} & \textit{\small #4} \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeSubSubheading}[2]{
+    \item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \textit{\small#1} & \textit{\small #2} \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeProjectHeading}[2]{
+    \item
+    \begin{tabular*}{1.001\textwidth}{l@{\extracolsep{\fill}}r}
+      \small#1 & \textbf{\small #2}\\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeSubItem}[1]{\resumeItem{#1}\vspace{-4pt}}
+
+\renewcommand\labelitemi{$\vcenter{\hbox{\tiny$\bullet$}}$}
+\renewcommand\labelitemii{$\vcenter{\hbox{\tiny$\bullet$}}$}
+
+\newcommand{\resumeSubHeadingListStart}{\begin{itemize}[leftmargin=0.0in, label={}]}
+\newcommand{\resumeSubHeadingListEnd}{\end{itemize}}
+\newcommand{\resumeItemListStart}{\begin{itemize}}
+\newcommand{\resumeItemListEnd}{\end{itemize}\vspace{-5pt}}
+
+%-------------------------------------------
+%%%%%%  RESUME STARTS HERE  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\begin{document}
+
+%----------HEADING----------
+
+\begin{center}
+    {\Huge \scshape Aarav Machhral} \\ \vspace{1pt}
+    Gurugram, India \\ \vspace{1pt}
+    \small \raisebox{-0.1\height}\faPhone\ +91-7087099450 ~ \href{mailto:aarav@machhral.com}{\raisebox{-0.2\height}\faEnvelope\  \underline{aarav@machhral.com}} ~ 
+    \href{https://linkedin.com/in/aarav-machhral-078b0b22b/}{\raisebox{-0.2\height}\faLinkedin\ \underline{Linkedin}}  ~
+    \href{https://github.com/hellybrine}{\raisebox{-0.2\height}\faGithub\ \underline{Github}}
+    \vspace{-8pt}
+\end{center}
+
+
+%-----------EDUCATION-----------
+\section{Education}
+  \resumeSubHeadingListStart
+    \resumeSubheading
+      {Delhi Technological University}{July 2022 - May 2026 (Expected)}
+      {Bachelor of Technology in Software Engineering}{New Delhi, India}
+  \resumeSubHeadingListEnd
+
+%-----------EXPERIENCE-----------
+\section{Experience}
+  \resumeSubHeadingListStart
+    \resumeSubheading
+        {North Star Identity}{December 2024 - February 2025}  
+        {Identity \& Access Management Intern}{Remote}  
+        \resumeItemListStart  
+            \resumeItem{\textbf{Performed IAM security audits in AWS and Okta,} identifying and remediating over-permissioned roles by enforcing \textbf{least-privilege access controls}, reducing attack surfaces.}  
+            \resumeItem{\textbf{Analyzed authentication anomalies} and implemented \textbf{adaptive Multi-Factor Authentication (MFA)} policies in Okta, achieving a 40\% reduction in unauthorized login attempts and mitigating associated risks.}
+            \resumeItem{\textbf{Delivered weekly presentations and facilitated discussions on cybersecurity products, tools, and emerging threats,} enhancing the team's overall awareness of evolving security trends.}
+\resumeItemListEnd 
+\resumeItemListEnd
+
+    \resumeSubHeadingListStart
+     \resumeSubheading
+        {The Red Users}{November 2024 - December 2024}  
+        {Cybersecurity Intern}{Remote}  
+        \resumeItemListStart  
+            \resumeItem{\textbf{Conducted network traffic analysis} using \textbf{Wireshark}; identified vulnerabilities, abnormal patterns, and misconfigurations, strengthening network security posture.}  
+            \resumeItem{\textbf{Performed web application security assessments} with OWASP ZAP, uncovering critical vulnerabilities (SQL injection, XSS, and authentication flaws); \textbf{documented findings in detailed security reports,} contributing directly to remediation efforts.} 
+            \resumeItem{\textbf{Executed threat modeling analyses}, identifying security risks and integrating \textbf{secure development practice}s, proactively mitigating vulnerabilities throughout the software lifecycle.} 
+\resumeItemListEnd
+\resumeSubHeadingListEnd
+\vspace{-10pt}
+
+%-----------PROJECTS-----------
+\section{Projects}
+    \vspace{-5pt}
+    \resumeSubHeadingListStart
+      \resumeProjectHeading
+          {\textbf{Self-Hosted Secure Infrastructure} $|$ \emph{Ubuntu, Docker, Nginx, RAID 1, Grafana, Prometheus}}{March 2022 - Present}
+          \resumeItemListStart
+                \resumeItem{Designed and built a secure homelab environment leveraging \textbf{Ubuntu}, \textbf{Docker}, and \textbf{Nginx}, implementing \textbf{RAID 1} for data redundancy and achieving \textbf{99\% uptime} over extended testing periods.}  
+                \resumeItem{Deployed and configured \textbf{Grafana} for real-time monitoring and analytics, alongside an \textbf{MQTT broker} to secure IoT communications, successfully reducing malicious traffic by \textbf{30\%} through proactive threat management.}  
+                \resumeItem{Implemented a \textbf{DNS sinkhole} to block unwanted traffic, significantly enhancing network security by mitigating phishing attempts, adware, and other external threats.}
+          \resumeItemListEnd
+          \vspace{-10pt}
+      \resumeProjectHeading
+          {\textbf{Encrypted Mobile Gateway} $|$ \emph{OpenWRT, WireGuard, DNS over HTTPS (DoH)}}{September 2024 - October 2024}
+          \resumeItemListStart
+                \resumeItem{\textbf{Developed a Raspberry Pi-based travel router} with OpenWRT, WireGuard, and a \textbf{locally running DNS server}, providing \textbf{encrypted internet access, DNS privacy, and automatic reconnections} on public and untrusted networks.}
+                \resumeItem{\textbf{Integrated a WiFi Pineapple instance,} transforming the device into a \textbf{mobile network and RF penetration testing lab, enabling network reconnaissance, man-in-the-middle (MITM) testing,} and security assessments}  
+                \resumeItem{\textbf{Hardened security and reliability with AES-256 encryption, custom firewall rules, DNS over HTTPS (DoH),} and an \textbf{iptables-based kill switch} to prevent data leakage during VPN failures.}
+    \resumeItemListEnd
+          \vspace{-5pt}
+
+%-----------PROGRAMMING SKILLS-----------%
+\section{Technical Skills}
+    \begin{itemize}[leftmargin=0.15in, label={}]
+    \small{\item{
+            \textbf{Languages:} Python, Bash, SQL, PowerShell, JavaScript, C \\  
+            \textbf{Cybersecurity Tools:} Wireshark, OWASP ZAP, Burp Suite, Nmap, Nessus, Metasploit, Suricata, Kali Linux \\
+            \textbf{Cloud Platforms:} AWS (IAM, DynamoDB, Aurora, S3, EC2), Okta \\  
+            \textbf{Technologies:} Docker, Grafana, OpenWRT, WireGuard, VPN, SSH, DNS Sinkholes \\  
+            \textbf{Networking:} TCP/IP, DNS over HTTPS (DoH), HTTP(S), VPN, VLAN, NAT, Firewall Configuration \\
+    }}
+    \end{itemize}
+
+%-----------INVOLVEMENT---------------
+\section{Positions of Responsibility}
+    \resumeSubHeadingListStart
+        \resumeSubheading{Mentor}{August 2022 - Present}{Sahitya Debate Wing}{Delhi Technological University}
+        \resumeItemListStart
+            \resumeItem{Competed in inter-college debate circuits, securing multiple wins in competitive debating events.}  
+            \resumeItem{Mentored junior debaters on argument construction, rebuttal techniques, and strategic case building.}  
+            \resumeItem{Judged debates within the circuit and university society, evaluating logical coherence, delivery, and impact.}
+        \resumeItemListEnd
+    \resumeSubHeadingListEnd
+\end{document}
