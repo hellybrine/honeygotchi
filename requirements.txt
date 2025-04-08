@@ -1,0 +1,12 @@
+# Core functionality
+rich
+psutil
+PyYAML
+requests
+Flask
+Flask-SocketIO
+eventlet
+Jinja2
+numpy
+scikit-learn
+blessed

@@ -1,11 +1,21 @@
 from core.honeygotchi import Honeygotchi
+from webui.app import create_app
+from threading import Thread
+
+def run_webui():
+    app = create_app()
+    app.run(host="0.0.0.0", port=8080, denug=False)
 
 def main():
-    try:
-        bot = Honeygotchi()
-        bot.run()
-    except Exception as e:
-        print(f"[!] Honeygotchi crashed: {e}")
+
+    web_thread = Thread(target=run_webui, daemon=True)
+    web_thread.start()
+
+    bot = Honeygotchi()
+    bot.run()
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        print(f"[!] Honeygotchi crashed: {e}")
