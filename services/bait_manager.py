@@ -1,15 +1,11 @@
 # services/bait_manager.py
 from services.cowrie_service import CowrieService
-from services.honeyd_service import HoneydService
-from services.dionaea_service import DionaeaService
 
 class BaitManager:
     def __init__(self, logger):
         self.logger = logger
         self.services = [
-            CowrieService(logger),
-            HoneydService(logger),
-            DionaeaService(logger)
+            CowrieService(logger)
         ]
 
     def start_services(self):

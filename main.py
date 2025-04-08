@@ -1,5 +1,5 @@
 from core.honeygotchi import Honeygotchi
-from webui.app import create_app
+from webui.app import start_web
 from threading import Thread
 
 def run_webui():

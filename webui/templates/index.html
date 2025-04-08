@@ -3,10 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <title>Honeygotchi Web UI</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
+    <script defer src="/static/script.js"></script>
 </head>
 <body>
-    <h1>Welcome to Honeygotchi 🐝</h1>
-    <p>Monitor your honeypots from here.</p>
+    <div class="container">
+        <h1>Honeygotchi Web Dashboard</h1>
+
+        <div class="face-display">
+            <pre id="bot-face">[o_o]</pre>
+        </div>
+
+        <div class="honeypots-status">
+            <h2>Active Honeypots</h2>
+            <ul>
+                <li id="cowrie-status">Cowrie: <span class="status">unknown</span></li>
+            </ul>
+        </div>
+
+        <div class="stats">
+            <h2>Stats</h2>
+            <p>Uptime: <span id="uptime">0s</span></p>
+            <p>Connections: <span id="connections">0</span></p>
+            <p>Reward: <span id="reward">0.0</span></p>
+        </div>
+    </div>
 </body>
 </html>
