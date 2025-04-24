@@ -227,4 +227,4 @@ def honeypot(address, port, username, password):
 
 
 if __name__ == "__main__":
-    honeypot('127.0.0.1', 2223, 'username', 'password')
+    honeypot('0.0.0.0', 2223, 'username', 'password')
