@@ -1,44 +1,39 @@
 #!/bin/bash
 
-# Ensure the script is run as root or with sudo privileges
-if [ "$(id -u)" -ne 0 ]; then
-    echo "Please run this script with sudo."
-    exit 1
-fi
-
-# Install Python and pip if not already installed
+# Check for Python and pip
 echo "Checking for Python and pip..."
-if ! command -v python3 &> /dev/null; then
-    echo "Python3 not found. Installing Python3..."
-    apt-get update && apt-get install -y python3 python3-pip
-fi
 
-if ! command -v pip3 &> /dev/null; then
-    echo "pip3 not found. Installing pip3..."
-    apt-get install -y python3-pip
-fi
-
-# Install dependencies from requirements.txt
-echo "Installing dependencies..."
-pip3 install -r requirements.txt
-
-# Check if the dependencies were installed
-if [ $? -eq 0 ]; then
-    echo "Dependencies installed successfully!"
-else
-    echo "Error installing dependencies."
+# Check if Python 3 is installed
+if ! command -v python3 &>/dev/null; then
+    echo "Python3 is not installed. Please install Python3."
     exit 1
 fi
 
-# Generate SSH key for the server if not present
-if [ ! -f "server.key" ]; then
-    echo "Generating SSH key..."
-    ssh-keygen -t rsa -b 2048 -f server.key -N ""
+# Check if pip is installed
+if ! command -v pip3 &>/dev/null; then
+    echo "pip is not installed. Installing pip..."
+    sudo apt update
+    sudo apt install -y python3-pip
 fi
 
-# Start the honeypot
-echo "Starting the honeypot..."
-python3 honeypot.py
+# Install python3-venv if not installed (for creating virtual environment)
+echo "Installing python3-venv..."
+sudo apt install -y python3-venv
 
-# All set up
-echo "Honeypot installation and startup complete."
+# Create a virtual environment if it doesn't exist
+if [ ! -d "venv" ]; then
+    echo "Creating virtual environment..."
+    python3 -m venv venv
+fi
+
+# Activate the virtual environment
+echo "Activating virtual environment..."
+source venv/bin/activate
+
+# Install dependencies
+echo "Installing dependencies..."
+pip install -r requirements.txt
+
+# Run the honeypot
+echo "Running the honeypot..."
+python honeypot.py
