@@ -1,0 +1,13 @@
+services:
+  honeypot:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "2222:2222"
+      - "8080:8080"
+    volumes:
+      - ../config:/app/config
+      - ../logs:/app/logs
+      - ../rl_agent/policies:/app/rl_agent/policies
+    restart: unless-stopped
