@@ -26,6 +26,14 @@ if [ ! -d "venv" ]; then
     python3 -m venv venv
 fi
 
+# Check if the RSA key exists, and if not, generate it
+if [ ! -f "server.key" ]; then
+    echo "Generating RSA key for the SSH server..."
+    ssh-keygen -t rsa -b 2048 -f server.key -N ""
+else
+    echo "RSA key already exists."
+fi
+
 # Activate the virtual environment
 echo "Activating virtual environment..."
 source venv/bin/activate
