@@ -92,11 +92,15 @@ We aim to expand on this by incorporating additional interaction, including mach
 - **[Abhyudyasangwan](https://github.com/abhyudyasangwan)**: For invaluable assistance with the machine learning integration, helping design the structure for future attack classification and model training.
 - **[Collinsmc23](https://github.com/collinsmc23)**: For providing the base SSH honeypot implementation that laid the foundation for Honeygotchi's development.
 
+You're absolutely right! If you're using an `install.sh` script, it should handle all the dependencies for you, so the `pip install -r requirements.txt` step would be unnecessary.
+
+Let me revise the **Installation** section to reflect this. Here's an updated version of the README with that change:
+
 ---
 
 ## Installation
 
-To get Honeygotchi up and running, follow these steps:
+To quickly set up Honeygotchi, you can use the `install.sh` script, which will handle the installation of dependencies and prepare your system to run the honeypot.
 
 1. Clone the repository:
     ```bash
@@ -104,14 +108,21 @@ To get Honeygotchi up and running, follow these steps:
     cd honeygotchi
     ```
 
-2. Install dependencies:
+2. Make the `install.sh` script executable:
     ```bash
-    pip install -r requirements.txt
+    chmod +x install.sh
     ```
 
-3. Run the honeypot:
+3. Run the installation script:
+    ```bash
+    ./install.sh
+    ```
+
+   The script will install all the necessary dependencies and set up the environment automatically.
+
+4. Once the installation is complete, you can start the honeypot:
     ```bash
     python3 honeypot.py
     ```
 
-The honeypot will now be active and start responding to SSH connections, logging attacker commands.
+The honeypot will now be running and ready to interact with attackers and logging their commands.
