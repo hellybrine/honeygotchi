@@ -130,10 +130,10 @@ def emulated_shell(channel, client_ip):
             else:
                 response = b'\n' + cmd_str.encode() + b'\r\n'
 
-        channel.send(response)
-        channel.send(b'prod-server3$ ')
-        command = b""
-
+            channel.send(response)
+            channel.send(b'prod-server3$ ')
+            command = b""
+        time.sleep(0.1)
 
 # SSH Server + Socket
 class Server(paramiko.ServerInterface):
@@ -195,16 +195,18 @@ def client_handler(client, addr, username, password):
         emulated_shell(channel, client_ip=client_ip)
 
     except Exception as error:
-        print(error)
-        print("!!! Error !!!")
+        print(f"Error in client handler: {error}")
+        if transport:
+            transport.close()
+        client.close()
 
     finally:
         try:
-            transport.close()
+            if transport:
+                transport.close()
+            client.close()
         except Exception as error:
-            print(error)
-            print("!!! Error !!!")
-        client.close()
+            print(f"Error while closing: {error}")
 
 # Listener
 def honeypot(address, port, username, password):
@@ -220,10 +222,11 @@ def honeypot(address, port, username, password):
         try:
             client, addr = socks.accept()
             ssh_honeypot_thread = threading.Thread(target=client_handler, args=(client, addr, username, password))
+            ssh_honeypot_thread.daemon = True
             ssh_honeypot_thread.start()
 
         except Exception as error:
-            print(error)
+            print(f"Error in honeypot listener: {error}")
 
 
 if __name__ == "__main__":
