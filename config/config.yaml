@@ -5,7 +5,7 @@ honeypot:
 # SSH Server settings
 ssh:
   host: "0.0.0.0"
-  port: 2222
+  port: 2224
   key_path: "config/server.key"
   banner: "SSH-2.0-OpenSSH_8.9p1"
   
