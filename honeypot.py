@@ -4,12 +4,14 @@ import socket
 import paramiko
 import threading
 import random
-from faces import show_face
 import time
+from faces import show_face
 from banner import generate_banner
+from model import predict_attack
 
 # Global Constant
 SSH_BANNER = "SSH-2.0-MySSHServer_1.0"
+
 logging_format = logging.Formatter('%(message)s')
 host_key = paramiko.RSAKey(filename='server.key')
 
@@ -28,8 +30,8 @@ creds_logger.addHandler(creds_handler)
 
 # Fake file generation
 fake_files = [
-    "important_data.txt", "top_secret.key", "flag.txt", "admin.db", 
-    "config_backup.tar.gz", "vulnerable_script.sh", "malicious_payload.py", 
+    "important_data.txt", "top_secret.key", "flag.txt", "admin.db",
+    "config_backup.tar.gz", "vulnerable_script.sh", "malicious_payload.py",
     "user_data.db", "logs/system.log", "pwned_file.txt", "security_breach.log",
     "private_key.pem", "readme.md", "license.txt", "db_backup.sql",
     "hidden/secret_config.json", "hidden/backup/compromised_backup.tar"
@@ -38,8 +40,10 @@ fake_files = [
 stats = {
     "Logged IPs": 0,
     "Commands Captured": 0,
-    "Malware Dropped": 0
+    "Malware Dropped": 0,
+    "Attack Type": "Unknown"
 }
+recent_activity = []
 
 def generate_fake_files():
     return random.sample(fake_files, k=random.randint(5, len(fake_files)))
@@ -47,34 +51,48 @@ def generate_fake_files():
 def fake_ls(command):
     if 'ls -a' in command or 'ls' in command:
         fake_files_list = generate_fake_files()
-        response = '\n'.join(fake_files_list) + b'\r\n'
-        return response
+        response = '\n'.join(fake_files_list) + '\r\n'
+        return response.encode()
     return None
 
-# Logging helper for shell
 def log_command(cmd: bytes, client_ip: str):
     cmd_str = cmd.strip().decode(errors='ignore')
     creds_logger.info(f"{client_ip} > {cmd_str}")
-    creds_logger.info(f"Command {cmd.strip()} executed by {client_ip}")
+    stats["Commands Captured"] += 1
+    recent_activity.append(f"{client_ip} > {cmd_str}")
+    if len(recent_activity) > 10:
+        recent_activity.pop(0)
     return cmd_str
 
-# Shell Emulation
-def emulated_shell(channel, client_ip):
+def emulated_shell(channel, client_ip, failed_attempts=0):
+    session_commands = []
+    total_command_length = 0
+
     channel.send(b'prod-server3$ ')
     command = b""
     while True:
         char = channel.recv(1)
-        channel.send(char)
         if not char:
             channel.close()
             break
+        channel.send(char)
         command += char
-
         if char == b'\r':
             cmd_str = log_command(command, client_ip)
+            session_commands.append(cmd_str)
+            total_command_length += len(cmd_str)
+            # ML prediction after each command
+            features = [
+                len(session_commands),
+                total_command_length,
+                failed_attempts
+            ]
+            attack_type = predict_attack(features)
+            stats["Attack Type"] = attack_type
 
             if cmd_str == 'exit':
                 response = b'\n Goodbye!\n'
+                channel.send(response)
                 channel.close()
                 break
             elif cmd_str == 'pwd':
@@ -96,17 +114,18 @@ def emulated_shell(channel, client_ip):
             elif cmd_str == 'rm -rf /':
                 response = b'Nice try. System is still smiling at you. ^_^\r\n'
             elif 'wget' in cmd_str:
+                stats["Malware Dropped"] += 1
                 response = b'Connecting to totally-real-download.site...\nError: site filled with glitter. Download failed.\r\n'
             elif 'curl' in cmd_str:
                 response = b'Sure, curl that into your imagination.\r\n'
             elif cmd_str == 'netstat -an':
                 response = b'\nActive connections? Nah, it is a monastery in here.\r\n'
             elif cmd_str == 'ps aux':
-                response = b'\nUSER       PID %CPU %MEM COMMAND\nroot         1  0.0  0.0 /bin/dance_party\r\n'
+                response = b'\nUSER PID %CPU %MEM COMMAND\nroot 1 0.0 0.0 /bin/dance_party\r\n'
             elif cmd_str == 'top':
-                response = b'\nPID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND\n1 root      20   0   1234   1234   1234 R   100 100.0   0:00.01 illusion\r\n'
+                response = b'\nPID USER PR NI VIRT RES SHR S %CPU %MEM TIME+ COMMAND\n1 root 20 0 1234 1234 1234 R 100 100.0 0:00.01 illusion\r\n'
             elif cmd_str == 'history':
-                response = b'\n1  echo "You thought I would give you that?"\n2  nice try\n3  rm -rf hope\r\n'
+                response = b'\n1 echo "You thought I would give you that?"\n2 nice try\n3 rm -rf hope\r\n'
             elif 'chmod' in cmd_str:
                 response = b'Permissions? Sure, you are *permitted* to have hope.\r\n'
             elif cmd_str == 'sudo su':
@@ -129,77 +148,68 @@ def emulated_shell(channel, client_ip):
                 response = b'\nScripting dreams into a sandboxed void...\r\n'
             else:
                 response = b'\n' + cmd_str.encode() + b'\r\n'
-
             channel.send(response)
             channel.send(b'prod-server3$ ')
             command = b""
-        time.sleep(0.1)
+            time.sleep(0.1)
 
-# SSH Server + Socket
 class Server(paramiko.ServerInterface):
     def __init__(self, client_ip, input_username=None, input_password=None):
         self.event = threading.Event()
         self.client_ip = client_ip
         self.input_username = input_username
         self.input_password = input_password
+        self.failed_attempts = 0
 
     def check_channel_request(self, kind: str, chanid: int) -> int:
         if kind == 'session':
             return paramiko.OPEN_SUCCEEDED
-    
+
     def get_allowed_auths(self, username):
         return "password"
-    
+
     def check_auth_password(self, username, password):
-        funnel_logger.info(f'Client{self.client_ip} attempted connection with' + f'username : {username}, ' + f'password : {password} ')
-        creds_logger.info(f'{self.client_ip}, {username}, {password}')                           
+        funnel_logger.info(f'Client {self.client_ip} attempted connection with username: {username}, password: {password}')
+        creds_logger.info(f'{self.client_ip}, {username}, {password}')
         if self.input_username is not None and self.input_password is not None:
             if username == self.input_username and password == self.input_password:
                 return paramiko.AUTH_SUCCESSFUL
             else:
+                self.failed_attempts += 1
                 return paramiko.AUTH_FAILED
         else:
             return paramiko.AUTH_SUCCESSFUL
-    
+
     def check_channel_shell_request(self, channel):
         self.event.set()
         return True
-    
+
     def check_channel_pty_request(self, channel, term, width, height, pixelwidth, pixelheight, modes):
         return True
-    
+
     def check_channel_env_request(self, channel, name, value):
         return True
 
-# Client Handler
 def client_handler(client, addr, username, password):
     client_ip = addr[0]
+    stats["Logged IPs"] += 1
     print(f"{client_ip} has connected to the server")
-
     transport = None
     try:
         transport = paramiko.Transport(client)
         transport.local_version = SSH_BANNER
         server = Server(client_ip=client_ip, input_username=username, input_password=password)
-
         transport.add_server_key(host_key)
         transport.start_server(server=server)
-
         channel = transport.accept(100)
         if channel is None:
             print("No channel opened.")
             return
-        
         standard_banner = generate_banner()
         channel.send(standard_banner.encode())
-        emulated_shell(channel, client_ip=client_ip)
-
+        emulated_shell(channel, client_ip=client_ip, failed_attempts=server.failed_attempts)
     except Exception as error:
         print(f"Error in client handler: {error}")
-        if transport:
-            transport.close()
-        client.close()
-
     finally:
         try:
             if transport:
@@ -208,7 +218,6 @@ def client_handler(client, addr, username, password):
         except Exception as error:
             print(f"Error while closing: {error}")
 
-# Listener
 def honeypot(address, port, username, password):
     socks = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     socks.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -216,7 +225,7 @@ def honeypot(address, port, username, password):
     socks.listen(50)
     print(f"SSH server is active and listening on port {port}")
 
-    threading.Thread(target=show_face, args=("sleeping", stats), daemon=True).start()
+    threading.Thread(target=show_face, args=("sleeping", stats, recent_activity), daemon=True).start()
 
     while True:
         try:
@@ -224,10 +233,8 @@ def honeypot(address, port, username, password):
             ssh_honeypot_thread = threading.Thread(target=client_handler, args=(client, addr, username, password))
             ssh_honeypot_thread.daemon = True
             ssh_honeypot_thread.start()
-
         except Exception as error:
             print(f"Error in honeypot listener: {error}")
-
 
 if __name__ == "__main__":
     honeypot('0.0.0.0', 2223, 'username', 'password')

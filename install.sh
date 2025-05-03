@@ -1,32 +1,63 @@
 #!/bin/bash
 
-# Check for Python and pip
-echo "Checking for Python and pip..."
+set -e
 
-# Check if Python 3 is installed
+echo "=== Setting Up Honeygotchi ==="
+
+# Check for Python 3
 if ! command -v python3 &>/dev/null; then
-    echo "Python3 is not installed. Please install Python3."
-    exit 1
+    echo "Python3 is not installed. Attempting to install..."
+    if command -v apt &>/dev/null; then
+        sudo apt update
+        sudo apt install -y python3
+    elif command -v yum &>/dev/null; then
+        sudo yum install -y python3
+    else
+        echo "Unsupported OS. Please install Python 3 manually."
+        exit 1
+    fi
 fi
 
-# Check if pip is installed
+# Check for pip3
 if ! command -v pip3 &>/dev/null; then
-    echo "pip is not installed. Installing pip..."
-    sudo apt update
-    sudo apt install -y python3-pip
+    echo "pip3 is not installed. Attempting to install..."
+    if command -v apt &>/dev/null; then
+        sudo apt update
+        sudo apt install -y python3-pip
+    elif command -v yum &>/dev/null; then
+        sudo yum install -y python3-pip
+    else
+        echo "Unsupported OS. Please install pip3 manually."
+        exit 1
+    fi
 fi
 
-# Install python3-venv if not installed (for creating virtual environment)
-echo "Installing python3-venv..."
-sudo apt install -y python3-venv
+if ! python3 -m venv --help &>/dev/null; then
+    echo "python3-venv is not installed. Installing..."
+    if command -v apt &>/dev/null; then
+        sudo apt install -y python3-venv
+    elif command -v yum &>/dev/null; then
+        sudo yum install -y python3-venv
+    else
+        echo "Unsupported OS. Please install python3-venv manually."
+        exit 1
+    fi
+fi
 
-# Create a virtual environment if it doesn't exist
 if [ ! -d "venv" ]; then
-    echo "Creating virtual environment..."
+    echo "Creating Python virtual environment..."
     python3 -m venv venv
 fi
 
-# Check if the RSA key exists, and if not, generate it
+echo "Activating virtual environment..."
+source venv/bin/activate
+
+pip install --upgrade pip
+
+# Install dependencies
+echo "Installing Python dependencies..."
+pip install -r requirements.txt
+
 if [ ! -f "server.key" ]; then
     echo "Generating RSA key for the SSH server..."
     ssh-keygen -t rsa -b 2048 -f server.key -N ""
@@ -34,14 +65,16 @@ else
     echo "RSA key already exists."
 fi
 
-# Activate the virtual environment
-echo "Activating virtual environment..."
-source venv/bin/activate
+if [ ! -d "models" ]; then
+    mkdir models
+fi
 
-# Install dependencies
-echo "Installing dependencies..."
-pip install -r requirements.txt
+if [ ! -f "models/randomforest_classifier.pkl" ]; then
+    echo "Trained ML model not found. Training model..."
+    python3 -c "import model; model.train_model()"
+else
+    echo "Trained ML model already exists."
+fi
 
-# Run the honeypot
-echo "Running the honeypot..."
-python honeypot.py
+echo "All set! Starting the honeypot..."
+python3 honeypot.py
