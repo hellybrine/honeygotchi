@@ -76,5 +76,12 @@ else
     echo "Trained ML model already exists."
 fi
 
+if [ ! -f "models/randomforest_classifier.pkl" ] || [ ! -f "models/user_encoder.pkl" ]; then
+    echo "Training new model and encoder..."
+    python3 -c "import model; model.train_model()"
+else
+    echo "Model and encoder already exist."
+fi
+
 echo "All set! Starting the honeypot..."
 python3 honeypot.py
