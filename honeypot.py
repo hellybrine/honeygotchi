@@ -160,6 +160,7 @@ class Server(paramiko.ServerInterface):
         self.input_username = input_username
         self.input_password = input_password
         self.failed_attempts = 0
+        self.session_username = None
 
     def check_channel_request(self, kind: str, chanid: int) -> int:
         if kind == 'session':
@@ -169,6 +170,7 @@ class Server(paramiko.ServerInterface):
         return "password"
 
     def check_auth_password(self, username, password):
+        self.session_username = username
         funnel_logger.info(f'Client {self.client_ip} attempted connection with username: {username}, password: {password}')
         creds_logger.info(f'{self.client_ip}, {username}, {password}')
         if self.input_username is not None and self.input_password is not None:
