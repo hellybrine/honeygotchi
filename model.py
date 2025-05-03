@@ -14,7 +14,10 @@ def load_encoder():
         raise FileNotFoundError("User encoder not found at models/user_encoder.pkl")
     return joblib.load(ENCODER_PATH)
 
-def predict_attack(features):
+def predict_attack(features_df):
+    """
+    Predict attack type given a DataFrame of features.
+    """
     model = load_model()
-    prediction = model.predict([features])
+    prediction = model.predict(features_df)
     return "Malicious" if prediction[0] == 1 else "Normal"

@@ -5,12 +5,16 @@ import paramiko
 import threading
 import random
 import time
+import pandas as pd
 
 from faces import show_face
 from banner import generate_banner
 from model import predict_attack, load_encoder
 
+# SSH banner string
 SSH_BANNER = "SSH-2.0-MySSHServer_1.0"
+
+# Logging setup
 logging_format = logging.Formatter('%(message)s')
 host_key = paramiko.RSAKey(filename='server.key')
 
@@ -31,7 +35,7 @@ fake_files = [
     "config_backup.tar.gz", "vulnerable_script.sh", "malicious_payload.py",
     "user_data.db", "logs/system.log", "pwned_file.txt", "security_breach.log",
     "private_key.pem", "readme.md", "license.txt", "db_backup.sql",
-    "hidden/secret_config.json", "hidden/backup/compromised_backup.tar"
+    "hidden/secret_config.json", "hidden/backup/client_backup.tar"
 ]
 
 stats = {
@@ -50,7 +54,13 @@ def generate_fake_files():
 def fake_ls(command):
     if 'ls -a' in command or 'ls' in command:
         fake_files_list = generate_fake_files()
-        response = '\n'.join(fake_files_list) + '\r\n'
+        num_cols = 3
+        max_len = max(len(f) for f in fake_files_list) + 2
+        rows = []
+        for i in range(0, len(fake_files_list), num_cols):
+            row = ''.join(f.ljust(max_len) for f in fake_files_list[i:i+num_cols])
+            rows.append(row.rstrip())
+        response = '\n'.join(rows) + '\r\n'
         return response.encode()
     return None
 
@@ -64,8 +74,6 @@ def log_command(cmd: bytes, client_ip: str):
     return cmd_str
 
 def emulated_shell(channel, client_ip, failed_attempts=0, username="unknown"):
-    session_commands = []
-    total_command_length = 0
     is_private = 0
     is_failure = 0
     is_root = 1 if username == "root" else 0
@@ -76,7 +84,6 @@ def emulated_shell(channel, client_ip, failed_attempts=0, username="unknown"):
     no_failure = 1
     first = 1
     td = 1
-    ts = int(time.time())
 
     channel.send(b'prod-server3$ ')
     command = b""
@@ -89,8 +96,6 @@ def emulated_shell(channel, client_ip, failed_attempts=0, username="unknown"):
         command += char
         if char == b'\r':
             cmd_str = log_command(command, client_ip)
-            session_commands.append(cmd_str)
-            total_command_length += len(cmd_str)
             try:
                 user_encoded = user_encoder.transform([username])[0]
             except Exception:
@@ -109,7 +114,12 @@ def emulated_shell(channel, client_ip, failed_attempts=0, username="unknown"):
                 first,
                 td
             ]
-            attack_type = predict_attack(features)
+            feature_names = [
+                'user', 'is_private', 'is_failure', 'is_root', 'is_valid',
+                'not_valid_count', 'ip_failure', 'ip_success', 'no_failure', 'first', 'td'
+            ]
+            X_pred = pd.DataFrame([features], columns=feature_names)
+            attack_type = predict_attack(X_pred)
             stats["Attack Type"] = attack_type
 
             if cmd_str == 'exit':
@@ -176,6 +186,9 @@ def emulated_shell(channel, client_ip, failed_attempts=0, username="unknown"):
             time.sleep(0.1)
 
 class Server(paramiko.ServerInterface):
+    """
+    SSH server interface for authentication and session management.
+    """
     def __init__(self, client_ip, input_username=None, input_password=None):
         self.event = threading.Event()
         self.client_ip = client_ip
@@ -208,6 +221,9 @@ class Server(paramiko.ServerInterface):
         return True
 
 def client_handler(client, addr, username, password):
+    """
+    Handle each SSH client connection.
+    """
     client_ip = addr[0]
     stats["Logged IPs"] += 1
     print(f"{client_ip} has connected to the honeypot")
@@ -238,6 +254,9 @@ def client_handler(client, addr, username, password):
             print(f"Error while closing: {error}")
 
 def honeypot(address, port, username, password):
+    """
+    Main honeypot loop: listens for connections and spawns handlers.
+    """
     socks = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     socks.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     socks.bind((address, port))

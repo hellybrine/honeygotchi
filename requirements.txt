@@ -1,4 +1,6 @@
-paramiko==2.10.1
-termcolor==1.1.0
-numpy
+paramiko
+termcolor
 scikit-learn
+numpy
+pandas
+joblib
