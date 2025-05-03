@@ -237,4 +237,4 @@ def honeypot(address, port, username, password):
             print(f"Error in honeypot listener: {error}")
 
 if __name__ == "__main__":
-    honeypot('0.0.0.0', 2223, 'username', 'password')
+    honeypot('0.0.0.0', 2223, None, None)

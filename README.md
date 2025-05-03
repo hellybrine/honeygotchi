@@ -89,7 +89,7 @@ Long-term, reinforcement learning will enable Honeygotchi to evolve its response
 
 - [x] SSH emulation with humorous responses  
 - [x] Dynamic ASCII faces & live stats  
-- [ ] Machine learning attack classification  
+- [x] Machine learning attack classification  
 - [ ] Reinforcement learning for adaptive deception  
 - [ ] Web UI for visualization and management  
 - [ ] Simulation of additional system types (IoT, routers, etc.)
@@ -98,9 +98,9 @@ Long-term, reinforcement learning will enable Honeygotchi to evolve its response
 
 ## Credits & Inspiration
 
-- **Pwnagotchi:** For the idea of a pet honeypot with personality and learning.  
-- **[Abhyudyasangwan](https://github.com/abhyudyasangwan):** Machine learning design and guidance.  
-- **[Collinsmc23](https://github.com/collinsmc23):** Foundational SSH honeypot implementation.
+- **Pwnagotchi:** For the idea of a pet honeypot with personality and learning
+- **[Abhyudyasangwan](https://github.com/abhyudyasangwan):** Machine learning design and implementation
+- **[Collinsmc23](https://github.com/collinsmc23):** Foundational SSH honeypot implementation
 
 ---
 
