@@ -2,7 +2,7 @@
 
 > _“Why just catch attackers when you can amuse, confuse, and outsmart them?”_
 
-Welcome to **Honeygotchi** — your interactive, pet-inspired SSH honeypot that doesn’t just log attacks, but *plays* with them. Designed for defenders, researchers, and tinkerers, Honeygotchi blends deception, data science, and a dash of personality to turn your network into an intelligent trap for cyber adversaries.
+Welcome to **Honeygotchi**; your interactive, pet-inspired SSH honeypot that doesn’t just log attacks, but *plays* with them. Designed for defenders, researchers, and tinkerers, Honeygotchi blends deception, data science, and a dash of personality to turn your network into an intelligent trap for cyber adversaries.
 
 ---
 
