@@ -96,7 +96,6 @@ def emulated_shell(channel, client_ip, failed_attempts=0, username="unknown"):
             except Exception:
                 user_encoded = 0
 
-            # You can update these features per command/session if you wish
             features = [
                 user_encoded,
                 is_private,
@@ -108,8 +107,7 @@ def emulated_shell(channel, client_ip, failed_attempts=0, username="unknown"):
                 ip_success,
                 no_failure,
                 first,
-                td,
-                ts
+                td
             ]
             attack_type = predict_attack(features)
             stats["Attack Type"] = attack_type
