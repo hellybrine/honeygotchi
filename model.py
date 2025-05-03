@@ -1,38 +1,20 @@
-import random
-import numpy as np
-from sklearn.ensemble import RandomForestClassifier
-import pickle
+import joblib
 import os
 
-def generate_synthetic_data():
-    # Features: [Number of commands issued, Length of commands, Number of failed attempts]
-    features = []
-    labels = []
-    for _ in range(1000):
-        commands_issued = random.randint(1, 20)
-        length_of_commands = random.randint(10, 200)
-        failed_attempts = random.randint(0, 5)
-        label = random.choice([0, 1]) # 0: Normal, 1: Malicious
-        features.append([commands_issued, length_of_commands, failed_attempts])
-        labels.append(label)
-    return np.array(features), np.array(labels)
+MODEL_PATH = os.path.join('models', 'randomforest_classifier.pkl')
+ENCODER_PATH = os.path.join('models', 'user_encoder.pkl')
 
-def train_model():
-    features, labels = generate_synthetic_data()
-    model = RandomForestClassifier(n_estimators=100)
-    model.fit(features, labels)
-    # Save model to models/ directory
-    os.makedirs('models', exist_ok=True)
-    with open(os.path.join('models', 'randomforest_classifier.pkl'), 'wb') as model_file:
-        pickle.dump(model, model_file)
+def load_model():
+    if not os.path.exists(MODEL_PATH):
+        raise FileNotFoundError("Trained model not found at models/randomforest_classifier.pkl")
+    return joblib.load(MODEL_PATH)
 
-def predict_attack(command_data):
-    model_path = os.path.join('models', 'randomforest_classifier.pkl')
-    if os.path.exists(model_path):
-        with open(model_path, 'rb') as model_file:
-            model = pickle.load(model_file)
-        prediction = model.predict([command_data])
-        return "Malicious" if prediction == 1 else "Normal"
-    else:
-        print("Model not found. Please train the model first.")
-        return "Model not found"
+def load_encoder():
+    if not os.path.exists(ENCODER_PATH):
+        raise FileNotFoundError("User encoder not found at models/user_encoder.pkl")
+    return joblib.load(ENCODER_PATH)
+
+def predict_attack(features):
+    model = load_model()
+    prediction = model.predict([features])
+    return "Malicious" if prediction[0] == 1 else "Normal"

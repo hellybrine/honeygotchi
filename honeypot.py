@@ -5,17 +5,15 @@ import paramiko
 import threading
 import random
 import time
+
 from faces import show_face
 from banner import generate_banner
-from model import predict_attack
+from model import predict_attack, load_encoder
 
-# Global Constant
 SSH_BANNER = "SSH-2.0-MySSHServer_1.0"
-
 logging_format = logging.Formatter('%(message)s')
 host_key = paramiko.RSAKey(filename='server.key')
 
-# Log Module
 funnel_logger = logging.getLogger('FunnelLogger')
 funnel_logger.setLevel(logging.INFO)
 funnel_handler = RotatingFileHandler('audits.log', maxBytes=2000, backupCount=5)
@@ -28,7 +26,6 @@ creds_handler = RotatingFileHandler('cmd_audits.log', maxBytes=2000, backupCount
 creds_handler.setFormatter(logging_format)
 creds_logger.addHandler(creds_handler)
 
-# Fake file generation
 fake_files = [
     "important_data.txt", "top_secret.key", "flag.txt", "admin.db",
     "config_backup.tar.gz", "vulnerable_script.sh", "malicious_payload.py",
@@ -44,6 +41,8 @@ stats = {
     "Attack Type": "Unknown"
 }
 recent_activity = []
+
+user_encoder = load_encoder()
 
 def generate_fake_files():
     return random.sample(fake_files, k=random.randint(5, len(fake_files)))
@@ -64,9 +63,20 @@ def log_command(cmd: bytes, client_ip: str):
         recent_activity.pop(0)
     return cmd_str
 
-def emulated_shell(channel, client_ip, failed_attempts=0):
+def emulated_shell(channel, client_ip, failed_attempts=0, username="unknown"):
     session_commands = []
     total_command_length = 0
+    is_private = 0
+    is_failure = 0
+    is_root = 1 if username == "root" else 0
+    is_valid = 1
+    not_valid_count = 0
+    ip_failure = 0
+    ip_success = 1
+    no_failure = 1
+    first = 1
+    td = 1
+    ts = int(time.time())
 
     channel.send(b'prod-server3$ ')
     command = b""
@@ -81,11 +91,25 @@ def emulated_shell(channel, client_ip, failed_attempts=0):
             cmd_str = log_command(command, client_ip)
             session_commands.append(cmd_str)
             total_command_length += len(cmd_str)
-            # ML prediction after each command
+            try:
+                user_encoded = user_encoder.transform([username])[0]
+            except Exception:
+                user_encoded = 0
+
+            # You can update these features per command/session if you wish
             features = [
-                len(session_commands),
-                total_command_length,
-                failed_attempts
+                user_encoded,
+                is_private,
+                is_failure,
+                is_root,
+                is_valid,
+                not_valid_count,
+                ip_failure,
+                ip_success,
+                no_failure,
+                first,
+                td,
+                ts
             ]
             attack_type = predict_attack(features)
             stats["Attack Type"] = attack_type
@@ -173,14 +197,7 @@ class Server(paramiko.ServerInterface):
         self.session_username = username
         funnel_logger.info(f'Client {self.client_ip} attempted connection with username: {username}, password: {password}')
         creds_logger.info(f'{self.client_ip}, {username}, {password}')
-        if self.input_username is not None and self.input_password is not None:
-            if username == self.input_username and password == self.input_password:
-                return paramiko.AUTH_SUCCESSFUL
-            else:
-                self.failed_attempts += 1
-                return paramiko.AUTH_FAILED
-        else:
-            return paramiko.AUTH_SUCCESSFUL
+        return paramiko.AUTH_SUCCESSFUL
 
     def check_channel_shell_request(self, channel):
         self.event.set()
@@ -195,7 +212,7 @@ class Server(paramiko.ServerInterface):
 def client_handler(client, addr, username, password):
     client_ip = addr[0]
     stats["Logged IPs"] += 1
-    print(f"{client_ip} has connected to the server")
+    print(f"{client_ip} has connected to the honeypot")
     transport = None
     try:
         transport = paramiko.Transport(client)
@@ -207,9 +224,11 @@ def client_handler(client, addr, username, password):
         if channel is None:
             print("No channel opened.")
             return
-        standard_banner = generate_banner()
+        while server.session_username is None:
+            time.sleep(0.01)
+        standard_banner = generate_banner(username=server.session_username)
         channel.send(standard_banner.encode())
-        emulated_shell(channel, client_ip=client_ip, failed_attempts=server.failed_attempts)
+        emulated_shell(channel, client_ip=client_ip, failed_attempts=server.failed_attempts, username=server.session_username)
     except Exception as error:
         print(f"Error in client handler: {error}")
     finally:
