@@ -64,14 +64,6 @@ That’s it! Honeygotchi is now live, ready to greet and log your first attacker
 
 ---
 
-## Live Demo
-
-- Watch Honeygotchi’s face change as attackers connect and interact.
-- See real-time stats update as new IPs and commands roll in.
-- Laugh at the creative, misleading responses that keep attackers guessing.
-
----
-
 ## Machine Learning (Coming Soon)
 
 Honeygotchi’s ML core will use a **Random Forest** classifier (trained on the IoT-23 dataset) to automatically categorize attacks:
