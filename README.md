@@ -18,10 +18,10 @@ Traditional honeypots face a fundamental trade-off: engage attackers long enough
 The system employs four specialized neural networks, each optimizing a distinct objective:
 
 ```
-State Vector (15 dimensions) → [Engagement Net] → Action Probabilities
-                            → [Deception Net] → Action Probabilities  
-                            → [Security Net]  → Action Probabilities
-                            → [Collection Net]→ Action Probabilities
+State Vector (15 dimensions)    → [Engagement Net] → Action Probabilities
+                                → [Deception Net] → Action Probabilities  
+                                → [Security Net]  → Action Probabilities
+                                → [Collection Net]→ Action Probabilities
 ```
 
 **State Features**: Command complexity, session duration, attack patterns, timing analysis, privilege escalation attempts, and behavioral fingerprints.
