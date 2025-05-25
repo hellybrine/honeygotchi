@@ -45,7 +45,6 @@ class EnhancedRLAgent:
         self.training_data = []
 
     def _build_network(self, state_dim, action_dim, hidden_dim):
-        """Build neural network for each objective"""
         return nn.Sequential(
             nn.Linear(state_dim, hidden_dim),
             nn.ReLU(),
@@ -60,7 +59,6 @@ class EnhancedRLAgent:
         ).to(self.device)
 
     def get_state(self, session_data):
-        """Convert session data to state vector (compatible with existing format)"""
         return np.array([
             session_data.get('commands_count', 0) / 100.0,
             session_data.get('session_duration', 0) / 3600.0,
@@ -80,7 +78,6 @@ class EnhancedRLAgent:
         ], dtype=np.float32)
 
     def select_action(self, session_data):
-        """Select actions using RL policy"""
         state = self.get_state(session_data)
         
         if random.random() < self.epsilon:
@@ -169,28 +166,34 @@ class EnhancedRLAgent:
         }, filepath)
 
     def load_model(self, filepath='models/enhanced_rl_model.pth'):
-        """Load a trained model"""
         if not os.path.exists(filepath):
             print(f"Model file {filepath} not found. Using fresh model.")
             return
-        
-        checkpoint = torch.load(filepath, map_location=self.device)
-        
-        self.engagement_net.load_state_dict(checkpoint['engagement_net_state_dict'])
-        self.deception_net.load_state_dict(checkpoint['deception_net_state_dict'])
-        self.security_net.load_state_dict(checkpoint['security_net_state_dict'])
-        self.collection_net.load_state_dict(checkpoint['collection_net_state_dict'])
-        
+    checkpoint = torch.load(filepath, map_location=self.device)
+
+    def safe_load_state_dict(model, state_dict_key):
+        model_dict = model.state_dict()
+        loaded_dict = checkpoint[state_dict_key]
+        filtered_dict = {k: v for k, v in loaded_dict.items() if k in model_dict and v.size() == model_dict[k].size()}
+        model_dict.update(filtered_dict)
+        model.load_state_dict(model_dict, strict=False)
+    safe_load_state_dict(self.engagement_net, 'engagement_net_state_dict')
+    safe_load_state_dict(self.deception_net, 'deception_net_state_dict')
+    safe_load_state_dict(self.security_net, 'security_net_state_dict')
+    safe_load_state_dict(self.collection_net, 'collection_net_state_dict')
+    
+    try:
         self.optimizers['engagement'].load_state_dict(checkpoint['engagement_optimizer_state_dict'])
         self.optimizers['deception'].load_state_dict(checkpoint['deception_optimizer_state_dict'])
         self.optimizers['security'].load_state_dict(checkpoint['security_optimizer_state_dict'])
         self.optimizers['collection'].load_state_dict(checkpoint['collection_optimizer_state_dict'])
-        
-        self.epsilon = checkpoint['epsilon']
-        self.actions = checkpoint['actions']
-        self.training_data = checkpoint.get('training_data', [])
-        
-        print(f"Model loaded from {filepath}")
+    except Exception as e:
+        print(f"Warning: Could not load optimizer state: {e}")
+    self.epsilon = checkpoint.get('epsilon', 1.0)
+    self.actions = checkpoint.get('actions', self.actions)
+    self.training_data = checkpoint.get('training_data', [])
+    print(f"Model loaded from {filepath} (partial load, shape mismatches skipped)")
+
 
     def export_for_production(self, filepath='models/production_model.pt'):
         """Export model for production deployment"""

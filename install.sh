@@ -138,7 +138,7 @@ main() {
     echo -e "python3 honeypot.py${NC}"
     echo
     echo -e "To deactivate the virtual environment later:${NC}"
-    echo "   ${YELLOW}deactivate${NC}"
+    echo "deactivate${NC}"
     echo
     print_warning "Remember to configure any settings before running in production!"
 }
