@@ -223,6 +223,11 @@ Contributions welcome in areas of:
 - Behavioral analysis improvements
 - Performance optimizations
 
+## Credits
+- The [Pwnagotchi](https://pwnagotchi.ai/) is obviously a massive inspiration for this.
+- [abhyudyasangwan](https://github.com/abhyudyasangwan) for helping with the model.
+- [collinsmc23](https://github.com/collinsmc23) for the base honeypot implementation.
+
 ## License
 
 MIT License - LICENSE file in the pipeline
