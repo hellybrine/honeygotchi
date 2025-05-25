@@ -225,7 +225,7 @@ Contributions welcome in areas of:
 
 ## License
 
-MIT License - See LICENSE file for details.
+MIT License - LICENSE file in the pipeline
 
 ---
 
