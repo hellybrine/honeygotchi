@@ -1,0 +1,21 @@
+services:
+  honeygotchi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: honeygotchi
+    ports:
+      - "2223:2223"
+    volumes:
+      - ./logs:/usr/src/app/logs
+      - ./models:/usr/src/app/models
+      - ./data:/usr/src/app/data
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - honeypot-network
+
+networks:
+  honeypot-network:
+    driver: bridge

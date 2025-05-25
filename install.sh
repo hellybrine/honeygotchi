@@ -133,9 +133,9 @@ main() {
     echo
     echo -e "${BLUE}To start Honeygotchi:${NC}"
     echo "1. Activate the virtual environment:"
-    echo "   ${YELLOW}source venv/bin/activate${NC}"
+    echo -e "${YELLOW}source venv/bin/activate${NC}"
     echo "2. Run the honeypot:"
-    echo "   ${YELLOW}python3 honeypot.py${NC}"
+    echo -e "${YELLOW}python3 honeypot.py${NC}"
     echo
     echo -e "${BLUE}To deactivate the virtual environment later:${NC}"
     echo "   ${YELLOW}deactivate${NC}"
