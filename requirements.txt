@@ -4,3 +4,8 @@ scikit-learn
 numpy
 pandas
 joblib
+torch
+torchvision
+requests
+matplotlib
+seaborn
