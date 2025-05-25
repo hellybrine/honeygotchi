@@ -1,29 +1,70 @@
-FROM python:3.9-slim
+# Multi-stage build for optimized Python container
+FROM python:3.11-slim as builder
 
-WORKDIR /usr/src/app
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
-    openssh-client \
+    gcc \
+    g++ \
+    pkg-config \
+    libssl-dev \
+    libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Create virtual environment
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy requirements and install Python dependencies
 COPY requirements.txt .
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt
 
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+# Production stage
+FROM python:3.11-slim
 
-COPY . .
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/opt/venv/bin:$PATH"
 
-RUN mkdir -p logs models data
+# Create non-root user
+RUN groupadd -r rassh && useradd -r -g rassh rassh
 
-RUN if [ ! -f server.key ]; then \
-        ssh-keygen -t rsa -b 2048 -f server.key -N "" -C "honeygotchi-$(date +%Y%m%d)"; \
-        chmod 600 server.key; \
-    fi
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    libssl3 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Expose port
-EXPOSE 2223
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
 
-CMD ["python3", "honeypot.py"]
+# Create application directory
+WORKDIR /app
+
+# Copy application code
+COPY --chown=rassh:rassh src/ ./src/
+COPY --chown=rassh:rassh config/ ./config/
+COPY --chown=rassh:rassh data/ ./data/
+
+# Create directories for logs and data
+RUN mkdir -p logs data && \
+    chown -R rassh:rassh /app
+
+# Switch to non-root user
+USER rassh
+
+# Expose SSH port
+EXPOSE 2222
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import socket; socket.create_connection(('localhost', 2222), timeout=5)"
+
+# Run the application
+CMD ["python", "src/main.py"]

@@ -1,0 +1,9 @@
+# Username:Password pairs for authentication logging
+admin:admin
+root:root
+user:user
+test:test
+guest:guest
+administrator:password
+admin:123456
+root:toor

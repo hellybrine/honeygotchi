@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RASSH Honeypot Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>RASSH Honeypot Dashboard</h1>
+            <div class="status-indicator" id="status">
+                <span class="status-dot online"></span>
+                <span>Online</span>
+            </div>
+        </header>
+
+        <div class="main-grid">
+            <!-- Face Display -->
+            <div class="face-container">
+                <div class="face-display" id="faceDisplay">
+                    <div class="face" id="face">[^_^]</div>
+                    <div class="mood-text" id="moodText">Sleeping</div>
+                    <div class="last-activity" id="lastActivity">Last activity: Never</div>
+                </div>
+                <div class="face-animation" id="faceAnimation"></div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total Sessions</h3>
+                    <div class="stat-value" id="totalSessions">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Active Sessions</h3>
+                    <div class="stat-value" id="activeSessions">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Commands Today</h3>
+                    <div class="stat-value" id="commandsToday">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Commands</h3>
+                    <div class="stat-value" id="totalCommands">0</div>
+                </div>
+            </div>
+
+            <!-- Activity Feed -->
+            <div class="activity-container">
+                <h3>Recent Activity</h3>
+                <div class="activity-feed" id="activityFeed">
+                    <div class="activity-item">
+                        <span class="activity-time">Waiting for activity...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top IPs -->
+            <div class="top-ips-container">
+                <h3>Top Attacking IPs</h3>
+                <div class="ip-list" id="ipList">
+                    <div class="ip-item">No data yet</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>

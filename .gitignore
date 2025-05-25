@@ -1,3 +1,4 @@
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -19,21 +20,8 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
-*.manifest
-*.spec
-pip-log.txt
-pip-delete-this-directory.txt
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-.hypothesis/
-.pytest_cache/
+
+# Virtual environments
 .env
 .venv
 env/
@@ -41,71 +29,46 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-.project
-.pydevproject
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-*.key
-*.pem
-*.pub
-server.key*
-client.key*
-host_key*
+
+# Logs
 logs/
 *.log
-*.log.*
+
+# Data
 data/
-captures/
-sessions/
-models/
+*.pickle
 *.pkl
-*.h5
-*.model
-*.ckpt
-*.pth
-*.pt
-*.joblib
-checkpoints/
-weights/
-training_data/
-config.ini
-.env.local
-.env.production
-secrets.json
-credentials.json
+
+# Docker
+.dockerignore
+
+# Database
 *.db
-*.sqlite
 *.sqlite3
-*.tmp
-*.temp
-*.bak
-*.swp
-*.swo
-.ipynb_checkpoints/
+
+# SSH keys
+ssh_host_key*
+*.pem
+*.key
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# MyPy
 .mypy_cache/
 .dmypy.json
 dmypy.json
-.pyre/
-.python-version
-.dockerignore
-attack_logs/
-malware_samples/
-payloads/
-artifacts/
-analysis/
-research/
-*.pcap
-*.cap
-*.backup
-*.bak
-backup/
