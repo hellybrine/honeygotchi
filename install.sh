@@ -131,13 +131,13 @@ main() {
     echo " ✓ Multi-objective optimization"
     echo " ✓ Production model export"
     echo
-    echo -e "${BLUE}To start Honeygotchi:${NC}"
+    echo -e "To start Honeygotchi:${NC}"
     echo "1. Activate the virtual environment:"
-    echo -e "${YELLOW}source venv/bin/activate${NC}"
+    echo -e "source venv/bin/activate${NC}"
     echo "2. Run the honeypot:"
-    echo -e "${YELLOW}python3 honeypot.py${NC}"
+    echo -e "python3 honeypot.py${NC}"
     echo
-    echo -e "${BLUE}To deactivate the virtual environment later:${NC}"
+    echo -e "To deactivate the virtual environment later:${NC}"
     echo "   ${YELLOW}deactivate${NC}"
     echo
     print_warning "Remember to configure any settings before running in production!"
