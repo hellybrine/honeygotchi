@@ -1,4 +1,4 @@
-# Adaptive SSH Honeypot with Reinforcement Learning
+# Honeygotchi
 
 A SSH honeypot that leverages multi-objective reinforcement learning to adaptively deceive attackers while maximizing intelligence collection. This system goes beyond traditional honeypots by learning optimal response strategies in real-time, maintaining extended attacker engagement through intelligent deception.
 
