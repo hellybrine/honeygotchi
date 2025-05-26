@@ -1,10 +1,8 @@
-"""Application constants."""
 from enum import IntEnum
 from typing import Optional
 
 
 class ActionType(IntEnum):
-    """Available honeypot actions."""
     ALLOW = 0
     DELAY = 1
     FAKE = 2
@@ -13,7 +11,6 @@ class ActionType(IntEnum):
 
 
 class CommandType(IntEnum):
-    """Command classification types."""
     UNKNOWN = 0
     DOWNLOAD = 1
     EXECUTE = 2
@@ -21,7 +18,6 @@ class CommandType(IntEnum):
 
 # Global state (to be replaced with proper state management)
 class GlobalState:
-    """Global application state."""
     
     def __init__(self):
         self.current_command: Optional[str] = None

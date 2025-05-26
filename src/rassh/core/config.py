@@ -1,4 +1,3 @@
-"""Configuration management using Pydantic settings."""
 import os
 from pathlib import Path
 from typing import Optional
@@ -8,7 +7,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class DatabaseConfig(BaseSettings):
-    """Database configuration."""
     
     host: str = Field(default="localhost", description="Database host")
     port: int = Field(default=3306, description="Database port")
@@ -24,7 +22,6 @@ class DatabaseConfig(BaseSettings):
 
 
 class HoneypotConfig(BaseSettings):
-    """Honeypot configuration."""
     
     hostname: str = Field(default="server", description="Honeypot hostname")
     listen_port: int = Field(default=2222, description="SSH listen port")
@@ -47,7 +44,6 @@ class HoneypotConfig(BaseSettings):
 
 
 class RLConfig(BaseSettings):
-    """Reinforcement Learning configuration."""
     
     learning_rate: float = Field(default=0.01, description="Learning rate")
     epsilon: float = Field(default=0.1, description="Exploration rate")
@@ -63,7 +59,6 @@ class RLConfig(BaseSettings):
 
 
 class AppConfig(BaseSettings):
-    """Main application configuration."""
     
     debug: bool = Field(default=False, description="Debug mode")
     log_level: str = Field(default="INFO", description="Logging level")

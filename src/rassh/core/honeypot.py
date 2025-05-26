@@ -1,4 +1,3 @@
-"""Main honeypot server implementation using AsyncSSH."""
 import asyncio
 import asyncssh
 import structlog
@@ -21,7 +20,6 @@ logger = structlog.get_logger()
 
 
 class HoneypotSSHServer(asyncssh.SSHServer):
-    """SSH server for honeypot."""
     
     def __init__(self, config: AppConfig, db_manager: DatabaseManager, rl_agent: HoneypotAgent, dashboard_app):
         self.config = config
