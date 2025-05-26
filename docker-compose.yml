@@ -1,8 +1,10 @@
-version: '3.8'
-
 services:
-  rassh-honeypot:
-    build: .
+  honeygotchi:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - BUILDKIT_INLINE_CACHE=1
     container_name: honeygotchi
     restart: unless-stopped
     ports:
@@ -10,9 +12,9 @@ services:
       - "8080:8080"
     environment:
       - DB_HOST=mysql
-      - DB_USERNAME=rassh
-      - DB_PASSWORD=rassh_password
-      - DB_DATABASE=rassh_db
+      - DB_USERNAME=honeygotchi
+      - DB_PASSWORD=honeygotchi_password
+      - DB_DATABASE=honeygotchi_db
       - HONEYPOT_LOG_PATH=/app/logs
       - HONEYPOT_DATA_PATH=/app/data
     volumes:
@@ -23,17 +25,17 @@ services:
       mysql:
         condition: service_healthy
     networks:
-      - rassh-network
+      - honeygotchi
 
   mysql:
     image: mysql:8.0
-    container_name: rassh-mysql
+    container_name: honeygotchi-mysql
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root_password
-      MYSQL_DATABASE: rassh_db
-      MYSQL_USER: rassh
-      MYSQL_PASSWORD: rassh_password
+      MYSQL_DATABASE: honeygotchi_db
+      MYSQL_USER: honeygotchi
+      MYSQL_PASSWORD: honeygotchi_password
     volumes:
       - mysql_data:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -44,11 +46,11 @@ services:
       timeout: 20s
       retries: 10
     networks:
-      - rassh-network
+      - honeygotchi
 
 volumes:
   mysql_data:
 
 networks:
-  rassh-network:
+  honeygotchi:
     driver: bridge
