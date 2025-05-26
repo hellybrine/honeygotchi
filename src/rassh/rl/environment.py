@@ -7,7 +7,6 @@ from ..core.constants import ActionType, CommandType, global_state
 
 
 class HoneypotEnvironment(gym.Env):
-    """Honeypot RL environment using Gymnasium."""
     
     metadata = {"render_modes": ["human"]}
     
@@ -43,7 +42,7 @@ class HoneypotEnvironment(gym.Env):
         return observation, info
     
     def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
-        """Execute action and return results."""
+        """execute action and return results"""
         self.current_step += 1
         
         # Store action
