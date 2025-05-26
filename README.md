@@ -161,4 +161,4 @@ Honeygotchi wouldn’t exist without the RASSH and Pwnagotchi projects. Huge tha
 
 ---
 
-**Honeygotchi**: a weird little digital pet that lives in your terminal and fights hackers for fun.
+**Honeygotchi**: a little digital pet that lives in your terminal and fights hackers for fun.
