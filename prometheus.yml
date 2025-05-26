@@ -1,0 +1,8 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'honeygotchi'
+    static_configs:
+      - targets: ['honeygotchi:9090']
+    scrape_interval: 5s

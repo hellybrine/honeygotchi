@@ -1,56 +1,75 @@
+version: '3.8'
+
 services:
   honeygotchi:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - BUILDKIT_INLINE_CACHE=1
+    build: .
     container_name: honeygotchi
-    restart: unless-stopped
     ports:
-      - "2222:2222"
-      - "8080:8080"
-    environment:
-      - DB_HOST=mysql
-      - DB_USERNAME=honeygotchi
-      - DB_PASSWORD=honeygotchi_password
-      - DB_DATABASE=honeygotchi_db
-      - HONEYPOT_LOG_PATH=/app/logs
-      - HONEYPOT_DATA_PATH=/app/data
+      - "2222:2222"  # SSH honeypot
+      - "9090:9090"  # Prometheus metrics
     volumes:
       - ./logs:/app/logs
       - ./data:/app/data
-      - ./config:/app/config
-    depends_on:
-      mysql:
-        condition: service_healthy
     networks:
-      - honeygotchi
+      - monitoring
 
-  mysql:
-    image: mysql:8.0
-    container_name: honeygotchi-mysql
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: root_password
-      MYSQL_DATABASE: honeygotchi_db
-      MYSQL_USER: honeygotchi
-      MYSQL_PASSWORD: honeygotchi_password
-    volumes:
-      - mysql_data:/var/lib/mysql
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
     ports:
-      - "3306:3306"
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      timeout: 20s
-      retries: 10
+      - "9091:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
     networks:
-      - honeygotchi
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - monitoring
+
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki-config.yml:/etc/loki/local-config.yaml
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - monitoring
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: promtail
+    volumes:
+      - ./logs:/var/log/honeygotchi
+      - ./promtail-config.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - monitoring
 
 volumes:
-  mysql_data:
+  prometheus_data:
+  grafana_data:
+  loki_data:
 
 networks:
-  honeygotchi:
+  monitoring:
     driver: bridge

@@ -1,62 +1,26 @@
-FROM python:3.11-slim as builder
-
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
-
-RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    pkg-config \
-    libssl-dev \
-    libffi-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
-COPY requirements.txt .
-RUN pip install --upgrade pip && \
-    pip install -r requirements.txt
-
 FROM python:3.11-slim
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PATH="/opt/venv/bin:$PATH"
-
-RUN groupadd -r rassh && useradd -r -g rassh rassh
-
-RUN apt-get update && apt-get install -y \
-    libssl3 \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy virtual environment from builder
-COPY --from=builder /opt/venv /opt/venv
-
-# Create application directory
 WORKDIR /app
 
-# Copy application code
-COPY --chown=rassh:rassh src/ ./src/
-COPY --chown=rassh:rassh config/ ./config/
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    openssh-client \
+    && rm -rf /var/lib/apt/lists/*
 
+# Copy requirements and install
+COPY requirements.txt .
+RUN pip install -r requirements.txt
 
-# Create directories for logs and data
-RUN mkdir -p data
-RUN mkdir -p logs && \
-    chown -R rassh:rassh /app
+# Copy application
+COPY src/ ./src/
+COPY ssh_host_key* ./
 
-# Switch to non-root user
-USER rassh
+# Create directories
+RUN mkdir -p logs data
 
-# Expose SSH port
-EXPOSE 2222
+# Generate SSH key if not exists
+RUN if [ ! -f ssh_host_key ]; then ssh-keygen -t rsa -b 2048 -f ssh_host_key -N ""; fi
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import socket; socket.create_connection(('localhost', 2222), timeout=5)"
+EXPOSE 2222 9090
 
-# Run the application
-CMD ["python", "src/main.py"]
+CMD ["python", "src/honeygotchi.py"]
