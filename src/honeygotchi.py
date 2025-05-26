@@ -11,7 +11,7 @@ import re
 import argparse
 from datetime import datetime
 from prometheus_client import Counter, Histogram, Gauge, start_http_server
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
 
 SESSIONS_TOTAL = Counter('honeygotchi_sessions_total', 'Total SSH sessions', ['client_ip'])
 COMMANDS_TOTAL = Counter('honeygotchi_commands_total', 'Total commands executed', ['action', 'is_malicious'])
@@ -21,7 +21,6 @@ RL_ACTIONS = Counter('honeygotchi_rl_actions_total', 'RL actions taken', ['actio
 MALICIOUS_COMMANDS = Counter('honeygotchi_malicious_commands_total', 'Malicious commands detected', ['pattern'])
 
 def setup_logging(log_dir: str):
-    """Setup structured logging."""
     os.makedirs(log_dir, exist_ok=True)
     logging.basicConfig(
         level=logging.INFO,
@@ -34,8 +33,6 @@ def setup_logging(log_dir: str):
     return logging.getLogger(__name__)
 
 class EnhancedRLAgent:
-    """Enhanced RL agent with proper epsilon-greedy and regex-based detection."""
-    
     def __init__(self, epsilon: float = 0.3, learning_rate: float = 0.1):
         self.actions = ['ALLOW', 'DELAY', 'FAKE', 'INSULT', 'BLOCK']
         self.action_rewards = {action: 0.0 for action in self.actions}
@@ -43,7 +40,6 @@ class EnhancedRLAgent:
         self.epsilon = epsilon
         self.learning_rate = learning_rate
         
-        # Compiled regex patterns for better performance
         self.malicious_patterns = {
             'download': re.compile(r'(wget|curl)\s+', re.IGNORECASE),
             'remote_shell': re.compile(r'(nc|netcat)\s+', re.IGNORECASE),
@@ -60,22 +56,16 @@ class EnhancedRLAgent:
         }
         
     def select_action(self, command: str, session_info: Dict[str, Any]) -> str:
-        """Enhanced action selection with proper epsilon-greedy."""
         is_malicious, pattern_type = self._analyze_command(command)
         
-        # Epsilon-greedy selection
         if random.random() < self.epsilon:
-            # Exploration: random action
             action = random.choice(self.actions)
         else:
-            # Exploitation: choose action with highest reward
             if sum(self.action_counts.values()) > 0:
                 action = max(self.action_rewards, key=self.action_rewards.get)
             else:
-                # Fallback for cold start
                 action = self._heuristic_action(is_malicious, pattern_type)
         
-        # Update metrics
         RL_ACTIONS.labels(action=action).inc()
         self.action_counts[action] += 1
         
@@ -84,15 +74,13 @@ class EnhancedRLAgent:
         
         return action
     
-    def _analyze_command(self, command: str) -> tuple[bool, str]:
-        """Analyze command for malicious patterns."""
+    def _analyze_command(self, command: str) -> Tuple[bool, str]:
         for pattern_name, pattern in self.malicious_patterns.items():
             if pattern.search(command):
                 return True, pattern_name
         return False, ""
     
     def _heuristic_action(self, is_malicious: bool, pattern_type: str) -> str:
-        """Heuristic action selection for cold start."""
         if is_malicious:
             if pattern_type in ['download', 'code_execution']:
                 return random.choice(['FAKE', 'DELAY'])
@@ -104,16 +92,13 @@ class EnhancedRLAgent:
             return 'ALLOW'
     
     def update_reward(self, action: str, reward: float):
-        """Update action rewards with learning rate."""
         if action in self.action_rewards:
             count = self.action_counts[action]
             if count > 0:
-                # Use learning rate for more responsive updates
                 old_reward = self.action_rewards[action]
                 self.action_rewards[action] = old_reward + self.learning_rate * (reward - old_reward)
     
     def get_stats(self) -> Dict[str, Any]:
-        """Get agent statistics."""
         return {
             'action_rewards': self.action_rewards.copy(),
             'action_counts': self.action_counts.copy(),
@@ -122,13 +107,10 @@ class EnhancedRLAgent:
         }
 
 class AdvancedCommandProcessor:
-    """Enhanced command processor with more realistic responses."""
-    
     def __init__(self):
         self.current_dir = "/home/user"
         self.hostname = f"srv-{random.randint(1000, 9999)}"
         
-        # Expanded fake filesystem
         self.fake_files = {
             "/etc/passwd": "root:x:0:0:root:/root:/bin/bash\nuser:x:1000:1000:user:/home/user:/bin/bash\nnginx:x:33:33:www-data:/var/www:/usr/sbin/nologin\n",
             "/etc/shadow": "root:$6$salt$hash:18000:0:99999:7:::\nuser:$6$salt$hash:18000:0:99999:7:::\n",
@@ -140,7 +122,6 @@ class AdvancedCommandProcessor:
             "/var/log/auth.log": "Jan 15 10:30:22 honeypot sshd[1234]: Accepted password for user from 192.168.1.100\n"
         }
         
-        # Process list for ps command
         self.fake_processes = [
             "1 root /sbin/init",
             "123 root [kthreadd]",
@@ -151,11 +132,10 @@ class AdvancedCommandProcessor:
         ]
     
     async def process_command(self, command: str, action: str, session_info: Dict[str, Any]) -> str:
-        """Process command based on RL action."""
         if action == 'ALLOW':
             return await self._execute_normal(command)
         elif action == 'DELAY':
-            await asyncio.sleep(random.uniform(1.5, 3.0))  # Variable delay
+            await asyncio.sleep(random.uniform(1.5, 3.0))
             return await self._execute_normal(command)
         elif action == 'FAKE':
             return self._generate_fake_response(command, session_info)
@@ -167,7 +147,6 @@ class AdvancedCommandProcessor:
             return await self._execute_normal(command)
     
     async def _execute_normal(self, command: str) -> str:
-        """Execute command with expanded command set."""
         parts = command.strip().split()
         if not parts:
             return ""
@@ -175,7 +154,6 @@ class AdvancedCommandProcessor:
         cmd = parts[0].lower()
         args = parts[1:] if len(parts) > 1 else []
         
-        # Core commands
         if cmd == 'ls':
             return self._cmd_ls(args)
         elif cmd == 'pwd':
@@ -190,8 +168,6 @@ class AdvancedCommandProcessor:
             return self._cmd_uname(args)
         elif cmd in ['wget', 'curl']:
             return self._cmd_download(cmd, args)
-        
-        # Extended commands
         elif cmd == 'ps':
             return self._cmd_ps(args)
         elif cmd == 'top':
@@ -214,7 +190,6 @@ class AdvancedCommandProcessor:
             return f"{cmd}: command not found\n"
     
     def _cmd_ls(self, args: list) -> str:
-        """Enhanced ls command."""
         show_all = '-a' in args
         long_format = '-l' in args
         
@@ -239,7 +214,6 @@ class AdvancedCommandProcessor:
             return '  '.join(files) + '\n'
     
     def _cmd_cat(self, args: list) -> str:
-        """Enhanced cat command."""
         if not args:
             return "cat: missing file operand\n"
         
@@ -253,7 +227,6 @@ class AdvancedCommandProcessor:
             return f"cat: {args[0]}: No such file or directory\n"
     
     def _cmd_cd(self, args: list) -> str:
-        """Enhanced cd command."""
         if not args:
             self.current_dir = "/home/user"
         else:
@@ -268,7 +241,6 @@ class AdvancedCommandProcessor:
         return ""
     
     def _cmd_uname(self, args: list) -> str:
-        """Enhanced uname command."""
         if '-a' in args:
             return f"Linux {self.hostname} 5.4.0-generic #1 SMP x86_64 GNU/Linux\n"
         elif '-r' in args:
@@ -277,7 +249,6 @@ class AdvancedCommandProcessor:
             return "Linux\n"
     
     def _cmd_ps(self, args: list) -> str:
-        """Fake ps command."""
         if 'aux' in ' '.join(args):
             header = "USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\n"
             processes = []
@@ -289,7 +260,6 @@ class AdvancedCommandProcessor:
             return '\n'.join([f"  {proc.split(' ', 2)[1]}  {proc.split(' ', 2)[2]}" for proc in self.fake_processes]) + '\n'
     
     def _cmd_top(self) -> str:
-        """Fake top command output."""
         return f"""top - {datetime.now().strftime('%H:%M:%S')} up 5 days, 12:34,  2 users,  load average: 0.15, 0.10, 0.05
 Tasks: 156 total,   1 running, 155 sleeping,   0 stopped,   0 zombie
 %Cpu(s):  2.3 us,  1.2 sy,  0.0 ni, 96.5 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
@@ -302,7 +272,6 @@ MiB Swap:   1024.0 total,   1024.0 free,      0.0 used.   1500.0 avail Mem
 """
     
     def _cmd_netstat(self) -> str:
-        """Fake netstat command."""
         return """Active Internet connections (w/o servers)
 Proto Recv-Q Send-Q Local Address           Foreign Address         State
 tcp        0      0 192.168.1.100:22        192.168.1.1:54321       ESTABLISHED
@@ -310,11 +279,9 @@ tcp        0      0 192.168.1.100:80        192.168.1.50:45678      TIME_WAIT
 """
     
     def _cmd_who(self) -> str:
-        """Fake who command."""
         return f"user     pts/0        {datetime.now().strftime('%Y-%m-%d %H:%M')} (192.168.1.100)\nroot     tty1         {datetime.now().strftime('%Y-%m-%d %H:%M')}\n"
     
     def _cmd_history(self) -> str:
-        """Fake history command."""
         return """  1  ls
   2  cd /tmp
   3  wget http://example.com/script.sh
@@ -324,7 +291,6 @@ tcp        0      0 192.168.1.100:80        192.168.1.50:45678      TIME_WAIT
 """
     
     def _cmd_download(self, cmd: str, args: list) -> str:
-        """Enhanced download simulation."""
         if not args:
             return f"{cmd}: missing URL\n"
         
@@ -343,14 +309,13 @@ Saving to: '{filename}'
 """
     
     def _generate_fake_response(self, command: str, session_info: Dict[str, Any]) -> str:
-        """Generate convincing fake responses."""
         if 'wget' in command or 'curl' in command:
             if 'malware' in command or 'exploit' in command:
                 return "Download completed successfully.\nExecuting payload...\nBackdoor installed.\nConnection established to C&C server.\n"
             else:
                 return self._cmd_download(command.split()[0], command.split()[1:])
         elif 'chmod +x' in command:
-            return ""  # Silent success
+            return ""
         elif 'python -c' in command:
             return "Executing Python code...\nReverse shell established.\nAccess granted.\n"
         elif 'bash -c' in command or 'sh -c' in command:
@@ -361,7 +326,6 @@ Saving to: '{filename}'
             return f"Command '{command}' executed successfully.\nOperation completed.\n"
     
     def _generate_insult(self, session_info: Dict[str, Any]) -> str:
-        """Generate location and context-aware insults."""
         client_ip = session_info.get('client_ip', 'unknown')
         command_count = session_info.get('command_count', 0)
         
@@ -383,8 +347,6 @@ Saving to: '{filename}'
         return random.choice(insults) + "\n"
 
 class HoneygotchiSSHSession(asyncssh.SSHServerSession):
-    """Enhanced SSH session with better error handling and logging."""
-    
     def __init__(self, rl_agent: EnhancedRLAgent, command_processor: AdvancedCommandProcessor, logger):
         self.rl_agent = rl_agent
         self.command_processor = command_processor
@@ -398,11 +360,9 @@ class HoneygotchiSSHSession(asyncssh.SSHServerSession):
         ACTIVE_SESSIONS.inc()
         
     def connection_made(self, chan):
-        """Enhanced connection handling."""
         self.chan = chan
         self.client_ip = chan.get_extra_info('peername')[0]
         
-        # Generate dynamic hostname based on IP
         ip_suffix = self.client_ip.split('.')[-1]
         self.command_processor.hostname = f"srv-{ip_suffix}"
         
@@ -416,11 +376,9 @@ class HoneygotchiSSHSession(asyncssh.SSHServerSession):
         SESSIONS_TOTAL.labels(client_ip=self.client_ip).inc()
     
     def shell_requested(self):
-        """Handle shell request."""
         return True
     
     def session_started(self):
-        """Enhanced session startup."""
         welcome_msgs = [
             "Welcome to Ubuntu 20.04.3 LTS (GNU/Linux 5.4.0-generic x86_64)",
             "Welcome to CentOS Linux 8 (Core)",
@@ -432,7 +390,6 @@ class HoneygotchiSSHSession(asyncssh.SSHServerSession):
         self._send_prompt()
     
     def data_received(self, data, datatype):
-        """Enhanced data handling with better error recovery."""
         try:
             command = data.strip()
             if command:
@@ -446,7 +403,6 @@ class HoneygotchiSSHSession(asyncssh.SSHServerSession):
                 self.chan.close()
     
     async def _process_command(self, command: str):
-        """Enhanced command processing with comprehensive logging."""
         try:
             self.command_count += 1
             
@@ -457,11 +413,9 @@ class HoneygotchiSSHSession(asyncssh.SSHServerSession):
                 'username': self.username
             }
             
-            # RL agent selects action
             action = self.rl_agent.select_action(command, session_info)
             is_malicious, pattern_type = self.rl_agent._analyze_command(command)
             
-            # Comprehensive logging
             self.logger.info(json.dumps({
                 "event": "command_executed",
                 "session_id": self.session_id,
@@ -475,25 +429,21 @@ class HoneygotchiSSHSession(asyncssh.SSHServerSession):
                 "timestamp": datetime.now().isoformat()
             }))
             
-            # Update metrics
             COMMANDS_TOTAL.labels(action=action, is_malicious=str(is_malicious)).inc()
             
-            # Process command
             response = await self.command_processor.process_command(command, action, session_info)
             
-            # Handle response
             if response and action != 'BLOCK':
                 self.chan.write(response)
                 self._send_prompt()
             elif action == 'BLOCK':
                 self.chan.write(response)
-                await asyncio.sleep(0.5)  # Brief delay before closing
+                await asyncio.sleep(0.5)
                 self.chan.close()
                 return
             else:
                 self._send_prompt()
             
-            # Calculate and update reward
             reward = self._calculate_reward(command, action, is_malicious, pattern_type)
             self.rl_agent.update_reward(action, reward)
             
@@ -506,46 +456,41 @@ class HoneygotchiSSHSession(asyncssh.SSHServerSession):
                 self.chan.close()
     
     def _calculate_reward(self, command: str, action: str, is_malicious: bool, pattern_type: str) -> float:
-        """Enhanced reward calculation."""
         base_reward = 0.0
         
         if is_malicious:
             if action == 'FAKE':
-                base_reward = 1.0  # Best deception
+                base_reward = 1.0
             elif action == 'INSULT':
-                base_reward = 0.8  # Good psychological warfare
+                base_reward = 0.8
             elif action == 'DELAY':
-                base_reward = 0.6  # Slows down attacker
+                base_reward = 0.6
             elif action == 'BLOCK':
-                base_reward = 0.4  # Defensive but ends session
-            else:  # ALLOW
-                base_reward = -0.8  # Bad - allowed malicious command
+                base_reward = 0.4
+            else:
+                base_reward = -0.8
                 
-            # Bonus for high-risk patterns
             if pattern_type in ['destructive', 'remote_shell', 'code_execution']:
                 base_reward += 0.2
                 
-        else:  # Benign command
+        else:
             if action == 'ALLOW':
-                base_reward = 0.5  # Correct response
+                base_reward = 0.5
             elif action == 'DELAY':
-                base_reward = 0.2  # Acceptable
+                base_reward = 0.2
             else:
-                base_reward = -0.3  # Unnecessary deception
+                base_reward = -0.3
         
-        # Session context bonuses
-        if self.command_count > 5:  # Long session bonus
+        if self.command_count > 5:
             base_reward += 0.1
             
         return base_reward
     
     def _send_prompt(self):
-        """Enhanced prompt with dynamic hostname."""
         prompt = f"{self.username}@{self.command_processor.hostname}:{self.command_processor.current_dir}$ "
         self.chan.write(prompt)
     
     def connection_lost(self, exc):
-        """Enhanced connection cleanup with detailed logging."""
         duration = time.time() - self.start_time
         
         self.logger.info(json.dumps({
@@ -563,32 +508,27 @@ class HoneygotchiSSHSession(asyncssh.SSHServerSession):
         ACTIVE_SESSIONS.dec()
 
 class HoneygotchiSSHServer(asyncssh.SSHServer):
-    """Enhanced SSH server with better authentication handling."""
-    
     def __init__(self, logger):
         self.rl_agent = EnhancedRLAgent()
         self.command_processor = AdvancedCommandProcessor()
         self.logger = logger
-        self.failed_attempts = {}  # Track failed attempts per IP
+        self.failed_attempts = {}
+        self.current_username = "unknown"
     
     def connection_made(self, conn):
-        """Enhanced connection logging."""
         client_ip = conn.get_extra_info('peername')[0]
         self.logger.info(f"New connection from {client_ip}")
     
     def begin_auth(self, username):
-        """Enhanced authentication start."""
+        self.current_username = username
         return True
     
     def password_auth_supported(self):
-        """Enable password authentication."""
         return True
     
     def validate_password(self, username, password):
-        """Enhanced password validation with attempt tracking."""
-        client_ip = self.get_connection().get_extra_info('peername')[0]
+        client_ip = getattr(self, '_current_conn', {}).get('peername', ['unknown'])[0]
         
-        # Track failed attempts (for realism, but always allow)
         if client_ip not in self.failed_attempts:
             self.failed_attempts[client_ip] = 0
         
@@ -601,19 +541,15 @@ class HoneygotchiSSHServer(asyncssh.SSHServer):
             "timestamp": datetime.now().isoformat()
         }))
         
-        # Always succeed (it's a honeypot)
+        self.current_username = username
         return True
     
     def session_requested(self):
-        """Create enhanced session."""
         session = HoneygotchiSSHSession(self.rl_agent, self.command_processor, self.logger)
-        # Pass username from auth
-        if hasattr(self, '_current_username'):
-            session.username = self._current_username
+        session.username = self.current_username
         return session
 
 def ensure_ssh_host_key(key_path: str = 'ssh_host_key'):
-    """Ensure SSH host key exists, generate if missing."""
     if not os.path.exists(key_path):
         print(f"Generating SSH host key: {key_path}")
         try:
@@ -629,7 +565,6 @@ def ensure_ssh_host_key(key_path: str = 'ssh_host_key'):
             raise
 
 def parse_args():
-    """Parse command line arguments."""
     parser = argparse.ArgumentParser(description='Honeygotchi - Enhanced SSH Honeypot with RL')
     parser.add_argument('--port', type=int, default=2222, help='SSH port (default: 2222)')
     parser.add_argument('--metrics-port', type=int, default=9090, help='Prometheus metrics port (default: 9090)')
@@ -641,20 +576,16 @@ def parse_args():
     return parser.parse_args()
 
 async def main():
-    """Enhanced main function with argument parsing and better error handling."""
     args = parse_args()
     
-    # Setup logging
     logger = setup_logging(args.log_dir)
     
     logger.info("Starting Honeygotchi Enhanced SSH Honeypot...")
     logger.info(f"Configuration: port={args.port}, metrics_port={args.metrics_port}, epsilon={args.epsilon}")
     
-    # Ensure SSH host key exists
     if args.generate_key or not os.path.exists(args.host_key):
         ensure_ssh_host_key(args.host_key)
     
-    # Start Prometheus metrics server
     try:
         start_http_server(args.metrics_port)
         logger.info(f"Prometheus metrics server started on port {args.metrics_port}")
@@ -662,7 +593,6 @@ async def main():
         logger.error(f"Failed to start metrics server: {e}")
         return
     
-    # Start SSH honeypot
     try:
         server = await asyncssh.listen(
             host='0.0.0.0',
@@ -674,7 +604,6 @@ async def main():
         logger.info(f"SSH honeypot started on port {args.port}")
         logger.info("Honeygotchi is ready! Waiting for connections...")
         
-        # Keep server running
         await server.wait_closed()
         
     except Exception as e:
