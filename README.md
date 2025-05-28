@@ -109,6 +109,9 @@ Input Command → Pattern Analysis → RL Decision → Response
         ├── auth.log        # Fake authentication logs
         └── syslog
 ```
+## Demo Interaction
+
+![Working](src/assets/working_demo.png)
 
 ## Quick Start
 
