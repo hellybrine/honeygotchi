@@ -13,12 +13,27 @@ from datetime import datetime
 from prometheus_client import Counter, Histogram, Gauge, start_http_server
 from typing import Dict, Any, Tuple
 
+# Import new modules
+try:
+    from .config_loader import Config
+    from .state_manager import StateManager
+    from .health_check import HealthCheckServer
+except ImportError:
+    # Fallback for direct execution
+    import sys
+    sys.path.insert(0, os.path.dirname(__file__))
+    from config_loader import Config
+    from state_manager import StateManager
+    from health_check import HealthCheckServer
+
 SESSIONS_TOTAL = Counter('honeygotchi_sessions_total', 'Total SSH sessions', ['client_ip'])
 COMMANDS_TOTAL = Counter('honeygotchi_commands_total', 'Total commands executed', ['action', 'is_malicious'])
 SESSION_DURATION = Histogram('honeygotchi_session_duration_seconds', 'Session duration')
 ACTIVE_SESSIONS = Gauge('honeygotchi_active_sessions', 'Currently active sessions')
 RL_ACTIONS = Counter('honeygotchi_rl_actions_total', 'RL actions taken', ['action'])
 MALICIOUS_COMMANDS = Counter('honeygotchi_malicious_commands_total', 'Malicious commands detected', ['pattern'])
+
+logger = logging.getLogger(__name__)
 
 def setup_logging(log_dir: str):
     os.makedirs(log_dir, exist_ok=True)
@@ -33,12 +48,25 @@ def setup_logging(log_dir: str):
     return logging.getLogger(__name__)
 
 class EnhancedRLAgent:
-    def __init__(self, epsilon: float = 0.3, learning_rate: float = 0.1):
+    def __init__(self, epsilon: float = 0.3, learning_rate: float = 0.1, state_manager: StateManager = None):
         self.actions = ['ALLOW', 'DELAY', 'FAKE', 'INSULT', 'BLOCK']
         self.action_rewards = {action: 0.0 for action in self.actions}
         self.action_counts = {action: 0 for action in self.actions}
         self.epsilon = epsilon
         self.learning_rate = learning_rate
+        self.state_manager = state_manager
+        self.decision_count = 0
+        self.save_interval = 100
+        
+        # Load saved state if available
+        if self.state_manager:
+            saved_state = self.state_manager.load_state()
+            if saved_state:
+                self.action_rewards = saved_state.get('action_rewards', self.action_rewards)
+                self.action_counts = saved_state.get('action_counts', self.action_counts)
+                self.epsilon = saved_state.get('epsilon', self.epsilon)
+                self.decision_count = saved_state.get('decision_count', 0)
+                logger.info(f"Loaded RL state: {sum(self.action_counts.values())} total decisions")
         self.malicious_patterns = {
             'download': re.compile(r'(wget|curl)\s+', re.IGNORECASE),
             'remote_shell': re.compile(r'(nc|netcat)\s+', re.IGNORECASE),
@@ -65,8 +93,14 @@ class EnhancedRLAgent:
                 action = self._heuristic_action(is_malicious, pattern_type)
         RL_ACTIONS.labels(action=action).inc()
         self.action_counts[action] += 1
+        self.decision_count += 1
         if is_malicious and pattern_type:
             MALICIOUS_COMMANDS.labels(pattern=pattern_type).inc()
+        
+        # Auto-save state periodically
+        if self.state_manager and self.decision_count % self.save_interval == 0:
+            self.save_state()
+        
         return action
 
     def _analyze_command(self, command: str) -> Tuple[bool, str]:
@@ -98,8 +132,25 @@ class EnhancedRLAgent:
             'action_rewards': self.action_rewards.copy(),
             'action_counts': self.action_counts.copy(),
             'epsilon': self.epsilon,
-            'total_decisions': sum(self.action_counts.values())
+            'total_decisions': sum(self.action_counts.values()),
+            'decision_count': self.decision_count
         }
+    
+    def save_state(self) -> bool:
+        """Save current state to file."""
+        if self.state_manager:
+            state = {
+                'action_rewards': self.action_rewards,
+                'action_counts': self.action_counts,
+                'epsilon': self.epsilon,
+                'decision_count': self.decision_count
+            }
+            return self.state_manager.save_state(state)
+        return False
+    
+    def set_save_interval(self, interval: int):
+        """Set the interval for auto-saving state."""
+        self.save_interval = interval
 
 def generate_fake_files():
     """Generate a realistic fake file system as a nested dictionary."""
@@ -454,8 +505,12 @@ class HoneygotchiSSHSession(asyncssh.SSHServerSession):
 
     def connection_made(self, chan):
         self.chan = chan
-        self.client_ip = chan.get_extra_info('peername')[0]
-        ip_suffix = self.client_ip.split('.')[-1]
+        peername = chan.get_extra_info('peername')
+        if peername:
+            self.client_ip = peername[0]
+        else:
+            self.client_ip = 'unknown'
+        ip_suffix = self.client_ip.split('.')[-1] if self.client_ip != 'unknown' else '0000'
         self.command_processor.hostname = f"srv-{ip_suffix}"
         self.logger.info(json.dumps({
             "event": "session_start",
@@ -594,10 +649,12 @@ class HoneygotchiSSHSession(asyncssh.SSHServerSession):
 
 # --- SSH Server ---
 class HoneygotchiSSHServer(asyncssh.SSHServer):
-    def __init__(self, logger):
-        self.rl_agent = EnhancedRLAgent()
+    def __init__(self, logger, config: Config = None):
+        # RL agent will be set by server_factory
+        self.rl_agent = None
         self.command_processor = AdvancedCommandProcessor()
         self.logger = logger
+        self.config = config or Config()
         self.failed_attempts = {}
         self.current_username = "unknown"
 
@@ -628,6 +685,9 @@ class HoneygotchiSSHServer(asyncssh.SSHServer):
         return True
 
     def session_requested(self):
+        if not self.rl_agent:
+            # Fallback if not set
+            self.rl_agent = EnhancedRLAgent()
         session = HoneygotchiSSHSession(self.rl_agent, self.command_processor, self.logger)
         session.username = self.current_username
         return session
@@ -650,38 +710,114 @@ def ensure_ssh_host_key(key_path: str = 'ssh_host_key'):
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Honeygotchi - Enhanced SSH Honeypot with RL')
-    parser.add_argument('--port', type=int, default=2222, help='SSH port (default: 2222)')
-    parser.add_argument('--metrics-port', type=int, default=9090, help='Prometheus metrics port (default: 9090)')
-    parser.add_argument('--log-dir', default='/app/logs', help='Log directory (default: /app/logs)')
-    parser.add_argument('--host-key', default='ssh_host_key', help='SSH host key file (default: ssh_host_key)')
+    parser.add_argument('--config', type=str, help='Path to configuration file (YAML)')
+    parser.add_argument('--port', type=int, help='SSH port (overrides config)')
+    parser.add_argument('--metrics-port', type=int, help='Prometheus metrics port (overrides config)')
+    parser.add_argument('--log-dir', type=str, help='Log directory (overrides config)')
+    parser.add_argument('--host-key', type=str, help='SSH host key file (overrides config)')
     parser.add_argument('--generate-key', action='store_true', help='Force generate new SSH host key')
-    parser.add_argument('--epsilon', type=float, default=0.3, help='RL exploration rate (default: 0.3)')
-    parser.add_argument('--learning-rate', type=float, default=0.1, help='RL learning rate (default: 0.1)')
+    parser.add_argument('--epsilon', type=float, help='RL exploration rate (overrides config)')
+    parser.add_argument('--learning-rate', type=float, help='RL learning rate (overrides config)')
+    parser.add_argument('--clear-state', action='store_true', help='Clear saved RL state')
     return parser.parse_args()
 
 async def main():
     args = parse_args()
-    logger = setup_logging(args.log_dir)
+    
+    # Load configuration
+    config = Config(args.config)
+    
+    # Override config with command-line arguments
+    if args.port:
+        config.update('ssh.port', args.port)
+    if args.metrics_port:
+        config.update('monitoring.metrics_port', args.metrics_port)
+    if args.log_dir:
+        config.update('logging.log_dir', args.log_dir)
+    if args.host_key:
+        config.update('ssh.host_key', args.host_key)
+    if args.epsilon is not None:
+        config.update('reinforcement_learning.epsilon', args.epsilon)
+    if args.learning_rate is not None:
+        config.update('reinforcement_learning.learning_rate', args.learning_rate)
+    
+    # Setup logging
+    log_dir = config.get('logging.log_dir', 'logs')
+    logger = setup_logging(log_dir)
     logger.info("Starting Honeygotchi Enhanced SSH Honeypot...")
-    logger.info(f"Configuration: port={args.port}, metrics_port={args.metrics_port}, epsilon={args.epsilon}")
-    if args.generate_key or not os.path.exists(args.host_key):
-        ensure_ssh_host_key(args.host_key)
+    
+    # Initialize state manager
+    state_file = config.get('reinforcement_learning.state_file', 'rl_state.json')
+    state_manager = StateManager(state_file)
+    
+    if args.clear_state:
+        state_manager.clear_state()
+        logger.info("RL state cleared")
+    
+    # Setup RL agent with state persistence
+    epsilon = config.get('reinforcement_learning.epsilon', 0.3)
+    learning_rate = config.get('reinforcement_learning.learning_rate', 0.1)
+    save_interval = config.get('reinforcement_learning.save_interval', 100)
+    
+    rl_agent = EnhancedRLAgent(
+        epsilon=epsilon,
+        learning_rate=learning_rate,
+        state_manager=state_manager
+    )
+    rl_agent.set_save_interval(save_interval)
+    
+    # Setup health check server if enabled
+    health_server = None
+    if config.get('monitoring.enable_health_check', True):
+        try:
+            health_port = config.get('monitoring.health_check_port', 8080)
+            health_server = HealthCheckServer(port=health_port)
+            await health_server.start()
+        except Exception as e:
+            logger.warning(f"Failed to start health check server: {e}")
+    
+    # Generate SSH host key if needed
+    host_key = config.get('ssh.host_key', 'ssh_host_key')
+    if args.generate_key or not os.path.exists(host_key):
+        ensure_ssh_host_key(host_key)
+    
+    # Start Prometheus metrics server
+    metrics_port = config.get('monitoring.metrics_port', 9090)
     try:
-        start_http_server(args.metrics_port)
-        logger.info(f"Prometheus metrics server started on port {args.metrics_port}")
+        start_http_server(metrics_port)
+        logger.info(f"Prometheus metrics server started on port {metrics_port}")
     except Exception as e:
         logger.error(f"Failed to start metrics server: {e}")
         return
+    
+    # Start SSH server
+    ssh_port = config.get('ssh.port', 2222)
+    ssh_host = config.get('ssh.host', '0.0.0.0')
+    
     try:
+        # Create server factory with config
+        def server_factory():
+            server = HoneygotchiSSHServer(logger, config)
+            server.rl_agent = rl_agent
+            return server
+        
         server = await asyncssh.listen(
-            host='0.0.0.0',
-            port=args.port,
-            server_factory=lambda: HoneygotchiSSHServer(logger),
-            server_host_keys=[args.host_key]
+            host=ssh_host,
+            port=ssh_port,
+            server_factory=server_factory,
+            server_host_keys=[host_key]
         )
-        logger.info(f"SSH honeypot started on port {args.port}")
+        logger.info(f"SSH honeypot started on {ssh_host}:{ssh_port}")
         logger.info("Honeygotchi is ready! Waiting for connections...")
-        await server.wait_closed()
+        
+        # Save state on shutdown
+        try:
+            await server.wait_closed()
+        finally:
+            rl_agent.save_state()
+            if health_server:
+                await health_server.stop()
+            logger.info("Honeygotchi shutdown complete")
     except Exception as e:
         logger.error(f"Failed to start SSH server: {e}")
         raise

@@ -2,3 +2,5 @@ asyncssh>=2.14.0
 prometheus_client>=0.17.0
 python-dotenv>=1.0.0
 structlog>=23.0.0
+pyyaml>=6.0.0
+pyinstaller>=6.0.0

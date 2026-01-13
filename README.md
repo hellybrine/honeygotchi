@@ -168,17 +168,66 @@ If you want to tweak the agent or experiment with reward policies:
 python -m venv env
 source env/bin/activate
 pip install -r requirements.txt
-pytest tests/
+python src/honeygotchi.py
 ```
 
-Config lives in `honeypot.yml`:
+## 📦 Building a Single Executable
+
+Honeygotchi can be built as a standalone executable that includes all dependencies:
+
+### Quick Build:
+```bash
+# Linux/macOS
+./build.sh
+
+# Windows
+build.bat
+```
+
+### Manual Build:
+```bash
+pip install pyinstaller
+pyinstaller honeygotchi.spec
+```
+
+The executable will be in the `dist/` directory. No Python installation required on the target system!
+
+### Using the Executable:
+```bash
+./dist/honeygotchi --port 2222 --config config.yaml
+```
+
+## ⚙️ Configuration
+
+Configuration is managed via `config.yaml` (see `config.yaml` for full options):
 
 ```yaml
+ssh:
+  port: 2222
+  host: "0.0.0.0"
+
 reinforcement_learning:
   epsilon: 0.3
   learning_rate: 0.1
-  exploration_decay: 0.995
+  state_file: "rl_state.json"
+  save_interval: 100
+
+monitoring:
+  metrics_port: 9090
+  enable_health_check: true
+  health_check_port: 8080
+
+logging:
+  level: "INFO"
+  log_dir: "logs"
 ```
+
+Config files are automatically searched in:
+1. Current directory
+2. `~/.honeygotchi/config.yaml`
+3. `/etc/honeygotchi/config.yaml`
+
+Command-line arguments override config file values.
 
 ---
 
@@ -199,9 +248,20 @@ Every interaction is data. Every deception is feedback.
 
 ## 🔒 Security Isolation
 
-Everything runs in isolated Docker containers with no real command execution.
-All “responses” are synthetic.
+Everything runs in isolated Docker containers (or as a standalone executable) with no real command execution.
+All "responses" are synthetic.
 Your host stays clean no matter what the attacker throws.
+
+## 🆕 Recent Improvements
+
+See [IMPROVEMENTS.md](IMPROVEMENTS.md) for a complete list of enhancements, including:
+
+- ✅ **YAML Configuration Support**: Flexible configuration management
+- ✅ **State Persistence**: RL agent saves and restores learned behavior
+- ✅ **Health Check Endpoints**: HTTP health monitoring
+- ✅ **Single Executable Build**: Standalone executable with PyInstaller
+- ✅ **Modular Architecture**: Better code organization and maintainability
+- ✅ **Enhanced Error Handling**: Graceful degradation and recovery
 
 ```
 ┌──────────────────────────────────────────────┐

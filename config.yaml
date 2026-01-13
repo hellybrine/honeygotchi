@@ -1,0 +1,43 @@
+# Honeygotchi Configuration File
+
+# SSH Server Configuration
+ssh:
+  port: 2222
+  host: "0.0.0.0"
+  host_key: "ssh_host_key"
+  generate_key: false
+  banner: true
+
+# Reinforcement Learning Configuration
+reinforcement_learning:
+  epsilon: 0.3
+  learning_rate: 0.1
+  state_file: "rl_state.json"
+  save_interval: 100  # Save state after N decisions
+
+# Monitoring Configuration
+monitoring:
+  metrics_port: 9090
+  enable_health_check: true
+  health_check_port: 8080
+
+# Logging Configuration
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  log_dir: "logs"
+  log_file: "honeygotchi.log"
+  json_format: true
+  max_log_size_mb: 100
+  backup_count: 5
+
+# Fake Filesystem Configuration
+filesystem:
+  hostname_prefix: "srv"
+  default_user: "user"
+  default_home: "/home/user"
+
+# Security Configuration
+security:
+  max_failed_attempts: 10
+  session_timeout_seconds: 3600
+  command_timeout_seconds: 30
