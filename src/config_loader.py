@@ -38,39 +38,22 @@ class Config:
             "ssh": {
                 "port": 2222,
                 "host": "0.0.0.0",
-                "host_key": "ssh_host_key",
-                "generate_key": False,
-                "banner": True
+                "host_key": "data/ssh_host_key",
+            },
+            "api": {
+                "port": 8080,
             },
             "reinforcement_learning": {
                 "epsilon": 0.3,
                 "learning_rate": 0.1,
-                "state_file": "rl_state.json",
-                "save_interval": 100
-            },
-            "monitoring": {
-                "metrics_port": 9090,
-                "enable_health_check": True,
-                "health_check_port": 8080
+                "discount": 0.9,
+                "state_file": "data/rl_state.json",
+                "save_interval": 100,
             },
             "logging": {
                 "level": "INFO",
                 "log_dir": "logs",
-                "log_file": "honeygotchi.log",
-                "json_format": True,
-                "max_log_size_mb": 100,
-                "backup_count": 5
             },
-            "filesystem": {
-                "hostname_prefix": "srv",
-                "default_user": "user",
-                "default_home": "/home/user"
-            },
-            "security": {
-                "max_failed_attempts": 10,
-                "session_timeout_seconds": 3600,
-                "command_timeout_seconds": 30
-            }
         }
         
         if os.path.exists(self.config_path):

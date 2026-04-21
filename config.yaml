@@ -1,43 +1,22 @@
-# Honeygotchi Configuration File
+# Honeygotchi configuration.
+# Paths under `data/` persist across container restarts when the data volume
+# is mounted (see docker-compose.yml).
 
-# SSH Server Configuration
 ssh:
   port: 2222
   host: "0.0.0.0"
-  host_key: "ssh_host_key"
-  generate_key: false
-  banner: true
+  host_key: "data/ssh_host_key"
 
-# Reinforcement Learning Configuration
+api:
+  port: 8080             # JSON stats API consumed by the dashboard
+
 reinforcement_learning:
-  epsilon: 0.3
-  learning_rate: 0.1
-  state_file: "rl_state.json"
-  save_interval: 100  # Save state after N decisions
+  epsilon: 0.3           # exploration rate (decays toward epsilon_min over time)
+  learning_rate: 0.1     # TD update step size
+  discount: 0.9          # Q-learning γ (future reward weight)
+  state_file: "data/rl_state.json"
+  save_interval: 100     # save Q-table every N decisions
 
-# Monitoring Configuration
-monitoring:
-  metrics_port: 9090
-  enable_health_check: true
-  health_check_port: 8080
-
-# Logging Configuration
 logging:
-  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  level: "INFO"
   log_dir: "logs"
-  log_file: "honeygotchi.log"
-  json_format: true
-  max_log_size_mb: 100
-  backup_count: 5
-
-# Fake Filesystem Configuration
-filesystem:
-  hostname_prefix: "srv"
-  default_user: "user"
-  default_home: "/home/user"
-
-# Security Configuration
-security:
-  max_failed_attempts: 10
-  session_timeout_seconds: 3600
-  command_timeout_seconds: 30
