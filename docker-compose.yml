@@ -1,78 +1,44 @@
 services:
   honeygotchi:
     build: .
+    image: honeygotchi:latest
     container_name: honeygotchi
     restart: unless-stopped
     ports:
-      - "2222:2222"  # SSH honeypot
-      - "9090:9090"  # Prometheus metrics
+      - "2222:2222"  # SSH honeypot — the only attacker-facing port
+    expose:
+      - "8080"       # stats API, only reachable inside the compose network
     volumes:
-      - ./logs:/app/logs
-      - ./data:/app/data
+      - honeygotchi_logs:/app/logs
+      - honeygotchi_data:/app/data
     networks:
-      - monitoring
+      - honeygotchi_net
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
 
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    restart: unless-stopped
-    ports:
-      - "9091:9090"
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-    networks:
-      - monitoring
-
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
+  dashboard:
+    build: ./dashboard
+    image: honeygotchi-dashboard:latest
+    container_name: honeygotchi_dashboard
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
-      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+      HONEYGOTCHI_URL: http://honeygotchi:8080
     networks:
-      - monitoring
-
-  loki:
-    image: grafana/loki:latest
-    container_name: loki
-    restart: unless-stopped
-    ports:
-      - "3100:3100"
-    volumes:
-      - ./loki-config.yml:/etc/loki/local-config.yaml
-      - loki_data:/loki
-    command: -config.file=/etc/loki/local-config.yaml
-    networks:
-      - monitoring
-
-  promtail:
-    image: grafana/promtail:latest
-    container_name: promtail
-    restart: unless-stopped
-    volumes:
-      - ./logs:/var/log/honeygotchi
-      - ./promtail-config.yml:/etc/promtail/config.yml
-    command: -config.file=/etc/promtail/config.yml
-    networks:
-      - monitoring
+      - honeygotchi_net
+    depends_on:
+      honeygotchi:
+        condition: service_healthy
 
 volumes:
-  prometheus_data:
-  grafana_data:
-  loki_data:
+  honeygotchi_data:
+  honeygotchi_logs:
 
 networks:
-  monitoring:
+  honeygotchi_net:
     driver: bridge
